@@ -1,5 +1,8 @@
 <script lang="ts">
+  // Import supabase client for database operations
+  // Example usage: const { data, error } = await supabase.from('table_name').select('*')
   import { supabase } from '$lib/supabaseClient';
+  
   let userInput = '';
   let aiResponse = '';
   async function askOpenAI() {
