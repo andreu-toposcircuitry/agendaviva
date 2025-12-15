@@ -1,0 +1,30 @@
+{
+  "name": "agendaviva-vo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Directori participatiu d'activitats per a infants i joves amb puntuació ND",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "workers/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "scrape": "npm run scrape --workspace=packages/scraper",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "prettier": "^3.1.0",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
