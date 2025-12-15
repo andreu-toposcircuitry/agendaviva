@@ -1,0 +1,178 @@
+---
+import Base from '../layouts/Base.astro';
+import ActivityCard from '../components/ActivityCard.svelte';
+import { supabase } from '../lib/supabase';
+import { TIPOLOGIES, MUNICIPIS } from '@agendaviva/shared/constants';
+
+const url = new URL(Astro.request.url);
+const municipi = url.searchParams.get('municipi');
+const tipologia = url.searchParams.get('tipologia');
+const edat = url.searchParams.get('edat');
+const nd_min = url.searchParams.get('nd_min');
+const q = url.searchParams.get('q');
+const page = parseInt(url.searchParams.get('page') || '1');
+const limit = 20;
+
+// Build query
+let query = supabase
+  .from('activitats')
+  .select('*', { count: 'exact' })
+  .eq('estat', 'publicada')
+  .order('created_at', { ascending: false });
+
+if (municipi) {
+  query = query.eq('municipi', municipi);
+}
+
+if (tipologia) {
+  query = query.eq('tipologia_principal', tipologia);
+}
+
+if (edat) {
+  const edatNum = parseInt(edat);
+  query = query.or(`edat_min.lte.${edatNum},edat_min.is.null`);
+  query = query.or(`edat_max.gte.${edatNum},edat_max.is.null`);
+}
+
+if (nd_min) {
+  const ndMinNum = parseInt(nd_min);
+  query = query.gte('nd_score', ndMinNum);
+}
+
+if (q) {
+  query = query.textSearch('search_vector', q);
+}
+
+// Pagination
+const offset = (page - 1) * limit;
+query = query.range(offset, offset + limit - 1);
+
+const { data: activitats, error, count } = await query;
+
+const totalPages = count ? Math.ceil(count / limit) : 1;
+---
+
+<Base title="Cerca d'activitats">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-8">Cerca d'activitats</h1>
+
+    <div class="grid md:grid-cols-4 gap-8">
+      <!-- Filters Sidebar -->
+      <aside class="md:col-span-1">
+        <div class="card sticky top-20">
+          <h2 class="font-bold text-lg mb-4">Filtres</h2>
+          
+          <form method="get" class="space-y-4">
+            <!-- Search -->
+            <div>
+              <label class="block text-sm font-medium mb-2">Cerca</label>
+              <input
+                type="text"
+                name="q"
+                value={q || ''}
+                placeholder="Paraula clau..."
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+
+            <!-- Municipality -->
+            <div>
+              <label class="block text-sm font-medium mb-2">Municipi</label>
+              <select name="municipi" class="w-full px-3 py-2 border rounded-lg">
+                <option value="">Tots</option>
+                {MUNICIPIS.map(m => (
+                  <option value={m.id} selected={municipi === m.id}>{m.nom}</option>
+                ))}
+              </select>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label class="block text-sm font-medium mb-2">Categoria</label>
+              <select name="tipologia" class="w-full px-3 py-2 border rounded-lg">
+                <option value="">Totes</option>
+                {Object.entries(TIPOLOGIES).map(([codi, info]) => (
+                  <option value={codi} selected={tipologia === codi}>
+                    {info.icon} {info.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <!-- Age -->
+            <div>
+              <label class="block text-sm font-medium mb-2">Edat</label>
+              <input
+                type="number"
+                name="edat"
+                value={edat || ''}
+                placeholder="Ex: 8"
+                min="0"
+                max="18"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+
+            <!-- ND Score -->
+            <div>
+              <label class="block text-sm font-medium mb-2">ND mínim</label>
+              <select name="nd_min" class="w-full px-3 py-2 border rounded-lg">
+                <option value="">Tots</option>
+                <option value="4" selected={nd_min === '4'}>4+ (ND-Friendly)</option>
+                <option value="5" selected={nd_min === '5'}>5 (Molt adequat)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">
+              Aplicar filtres
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      <!-- Results -->
+      <div class="md:col-span-3">
+        {error && (
+          <div class="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+            Error carregant activitats
+          </div>
+        )}
+
+        {activitats && activitats.length > 0 ? (
+          <>
+            <div class="mb-4 text-gray-600">
+              {count} activitats trobades
+            </div>
+
+            <div class="grid gap-6 mb-8">
+              {activitats.map(activitat => (
+                <ActivityCard activity={activitat} client:load />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div class="flex justify-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <a
+                    href={`?${new URLSearchParams({ ...Object.fromEntries(url.searchParams), page: p.toString() }).toString()}`}
+                    class={`px-4 py-2 rounded ${p === page ? 'bg-primary-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                  >
+                    {p}
+                  </a>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div class="text-center py-12">
+            <p class="text-xl text-gray-600">No s'han trobat activitats amb aquests criteris</p>
+            <a href="/cerca" class="text-primary-600 hover:text-primary-800 mt-4 inline-block">
+              Esborrar filtres
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Base>

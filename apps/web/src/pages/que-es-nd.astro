@@ -1,0 +1,131 @@
+---
+import Base from '../layouts/Base.astro';
+import { ND_NIVELLS } from '@agendaviva/shared/constants';
+---
+
+<Base title="Què és ND?" description="Informació sobre neurodivergència i com puntuem l'adequació de les activitats">
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h1 class="text-4xl font-bold mb-8">Què significa ND?</h1>
+
+    <div class="prose prose-lg max-w-none">
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Neurodivergència</h2>
+        <p class="mb-4">
+          La <strong>neurodivergència</strong> (ND) fa referència a les persones amb un funcionament 
+          neurològic diferent del considerat "típic" o "neurotípic". Inclou condicions com:
+        </p>
+        <ul class="list-disc pl-6 mb-4 space-y-2">
+          <li><strong>Autisme (TEA)</strong>: Diferències en la comunicació social i patrons de comportament</li>
+          <li><strong>TDAH</strong>: Trastorn per dèficit d'atenció amb o sense hiperactivitat</li>
+          <li><strong>Dislèxia</strong>: Dificultats específiques en la lectura</li>
+          <li><strong>Altres</strong>: Dispraxia, discalculia, síndrome de Tourette, etc.</li>
+        </ul>
+        <p>
+          Ser neurodivergent no és una malaltia, sinó una manera diferent de processar la informació, 
+          relacionar-se i experimentar el món.
+        </p>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Com puntuem les activitats?</h2>
+        <p class="mb-4">
+          A Agenda Viva VO, cada activitat té una <strong>puntuació d'adequació ND</strong> de l'1 al 5. 
+          Aquesta puntuació indica fins a quin punt l'activitat és accessible i còmoda per a persones 
+          neurodivergents.
+        </p>
+
+        <div class="space-y-4 mb-6">
+          {Object.entries(ND_NIVELLS).map(([score, info]) => (
+            <div class="card border-l-4" 
+              class:border-green-500={parseInt(score) >= 4}
+              class:border-gray-400={parseInt(score) === 3}
+              class:border-red-500={parseInt(score) <= 2}
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-3xl">{'★'.repeat(parseInt(score))}{'☆'.repeat(5 - parseInt(score))}</span>
+                <h3 class="font-bold text-lg">{info.nom}</h3>
+              </div>
+              <p class="text-gray-700">{info.descripcio}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Què fa una activitat ND-Friendly?</h2>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="card bg-green-50">
+            <h3 class="font-bold text-lg mb-3 text-green-800">✓ Indicadors Positius</h3>
+            <ul class="space-y-2 text-sm">
+              <li>✓ Grups reduïts (màx 6-8 persones)</li>
+              <li>✓ Ritme flexible i adaptable</li>
+              <li>✓ Rutines estructurades i predictibles</li>
+              <li>✓ Material visual de suport</li>
+              <li>✓ Espai tranquil i poc sorollós</li>
+              <li>✓ Pauses sensorials disponibles</li>
+              <li>✓ Professionals amb formació en ND</li>
+              <li>✓ Sense competició obligatòria</li>
+            </ul>
+          </div>
+
+          <div class="card bg-red-50">
+            <h3 class="font-bold text-lg mb-3 text-red-800">⚠ Possibles Barreres</h3>
+            <ul class="space-y-2 text-sm">
+              <li>⚠ Grups molt grans (>15 persones)</li>
+              <li>⚠ Ambient molt sorollós</li>
+              <li>⚠ Canvis constants i imprevistos</li>
+              <li>⚠ Alta demanda de comunicació social</li>
+              <li>⚠ Llums intermitents o intenses</li>
+              <li>⚠ Competició constant</li>
+              <li>⚠ Ritme ràpid i inflexible</li>
+              <li>⚠ Sense possibilitat d'adaptació</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Com obtenim aquesta puntuació?</h2>
+        <p class="mb-4">
+          La puntuació ND es genera de tres maneres:
+        </p>
+        <ol class="list-decimal pl-6 space-y-2">
+          <li>
+            <strong>Inferit</strong>: Un sistema d'intel·ligència artificial analitza la descripció 
+            de l'activitat buscant indicadors positius i negatius
+          </li>
+          <li>
+            <strong>Revisat</strong>: El nostre equip revisa i ajusta la puntuació amb coneixement expert
+          </li>
+          <li>
+            <strong>Confirmat</strong>: L'entitat o famílies que hi han participat confirmen la puntuació
+          </li>
+        </ol>
+        <p class="mt-4">
+          També mostrem el <strong>nivell de confiança</strong> de cada puntuació. Si és baix, 
+          recomanem contactar amb l'entitat per confirmar les característiques.
+        </p>
+      </section>
+
+      <section class="mb-8 bg-blue-50 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold mb-4">Important!</h2>
+        <p class="mb-4">
+          Cada persona és única. Una activitat amb puntuació alta pot no ser adequada per a tothom, 
+          i una amb puntuació baixa pot funcionar bé per a algunes persones.
+        </p>
+        <p>
+          <strong>Sempre recomanem</strong> contactar amb l'entitat per explicar les necessitats 
+          específiques i valorar junts si l'activitat és adequada.
+        </p>
+      </section>
+
+      <section class="text-center py-8">
+        <h2 class="text-2xl font-bold mb-4">Vols veure activitats ND-Friendly?</h2>
+        <a href="/nd-friendly" class="btn btn-primary text-lg">
+          Explorar activitats amb ND ≥ 4 →
+        </a>
+      </section>
+    </div>
+  </article>
+</Base>

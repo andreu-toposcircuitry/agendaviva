@@ -1,0 +1,36 @@
+name: Daily Scrape
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6 AM UTC daily (8 AM CEST)
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run scraper
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: npm run scrape
+        
+      - name: Report results
+        if: always()
+        run: |
+          echo "Scraping completed at $(date)"
+          # Future: Send notification to Discord/Slack

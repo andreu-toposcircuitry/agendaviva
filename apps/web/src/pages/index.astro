@@ -1,0 +1,100 @@
+---
+import Base from '../layouts/Base.astro';
+import SearchBox from '../components/SearchBox.svelte';
+import { TIPOLOGIES } from '@agendaviva/shared/constants';
+---
+
+<Base title="Inici">
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-primary-500 to-primary-700 text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold mb-4">Agenda Viva VO</h1>
+        <p class="text-xl text-primary-100 mb-8">
+          Descobreix activitats per a infants i joves al Vallès Oriental
+        </p>
+        <p class="text-lg text-primary-200">
+          Amb puntuació d'adequació per a persones neurodivergents 🌈
+        </p>
+      </div>
+      
+      <SearchBox client:load />
+    </div>
+  </section>
+
+  <!-- Quick Filters -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="flex flex-wrap gap-3 justify-center mb-8">
+      <a href="/cerca?edat=6" class="btn btn-secondary">6-8 anys</a>
+      <a href="/cerca?edat=10" class="btn btn-secondary">9-12 anys</a>
+      <a href="/cerca?edat=14" class="btn btn-secondary">13-16 anys</a>
+      <a href="/nd-friendly" class="btn bg-green-500 text-white hover:bg-green-600">ND-Friendly ✓</a>
+    </div>
+  </section>
+
+  <!-- Categories Grid -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h2 class="text-3xl font-bold text-center mb-12">Explora per categories</h2>
+    
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {Object.entries(TIPOLOGIES).map(([codi, info]) => (
+        <a
+          href={`/categoria/${codi}`}
+          class="card hover:shadow-lg transition-shadow text-center p-6"
+        >
+          <div class="text-4xl mb-3">{info.icon}</div>
+          <h3 class="font-semibold text-gray-900">{info.nom}</h3>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ND-Friendly Highlight -->
+  <section class="bg-green-50 py-16 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-3xl font-bold mb-4">Activitats ND-Friendly</h2>
+        <p class="text-lg text-gray-700 mb-6">
+          Totes les activitats tenen una puntuació d'adequació per a persones neurodivergents 
+          (autisme, TDAH, dislèxia, etc.). Cerca activitats amb alta puntuació per trobar 
+          espais més inclusius i adaptats.
+        </p>
+        <a href="/nd-friendly" class="btn btn-primary text-lg">
+          Veure activitats ND-Friendly →
+        </a>
+        <div class="mt-4">
+          <a href="/que-es-nd" class="text-primary-600 hover:text-primary-800">
+            Què significa ND? Més informació →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Municipalities -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h2 class="text-3xl font-bold text-center mb-8">Cerca per municipi</h2>
+    
+    <div class="flex flex-wrap gap-3 justify-center">
+      <a href="/cerca?municipi=granollers" class="btn btn-secondary">Granollers</a>
+      <a href="/cerca?municipi=mollet" class="btn btn-secondary">Mollet del Vallès</a>
+      <a href="/cerca?municipi=la-garriga" class="btn btn-secondary">La Garriga</a>
+      <a href="/cerca?municipi=cardedeu" class="btn btn-secondary">Cardedeu</a>
+      <a href="/cerca?municipi=sant-celoni" class="btn btn-secondary">Sant Celoni</a>
+      <a href="/cerca" class="btn btn-secondary">Tots els municipis →</a>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-gray-100 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl font-bold mb-4">Coneixes una activitat que no està aquí?</h2>
+      <p class="text-lg text-gray-700 mb-6">
+        Ajuda'ns a fer créixer aquesta agenda! Proposa activitats noves.
+      </p>
+      <a href="/proposa" class="btn btn-primary text-lg">
+        Proposa una activitat
+      </a>
+    </div>
+  </section>
+</Base>
