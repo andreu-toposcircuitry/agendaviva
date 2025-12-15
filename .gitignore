@@ -1,27 +1,47 @@
-test-results
-node_modules
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+# Build outputs
+dist/
+.astro/
+.svelte-kit/
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Env
-.env
-.env.*
-!.env.example
-!.env.test
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+test-results/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# Cloudflare
+.wrangler/
+
+# Storybook
+storybook-static/
+*storybook.log
 
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-*storybook.log
-storybook-static

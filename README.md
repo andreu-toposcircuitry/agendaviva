@@ -1,38 +1,55 @@
-# sv
+# Agenda Viva VO
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+> Directori participatiu d'activitats per a infants i joves al Vallès Oriental
 
-## Creating a project
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Què és?
 
-```sh
-# create a new project in the current directory
-npx sv create
+Agenda Viva VO és un directori d'activitats extraescolars, culturals i de lleure per a infants i joves del Vallès Oriental. El que el fa únic és la **classificació ND-readiness**: cada activitat rep una puntuació de com d'adaptada està per a infants neurodivergents (TDAH, TEA, alta sensibilitat).
 
-# create a new project in my-app
-npx sv create my-app
+## Característiques
+
+- **Cerca per municipi, edat, tipologia**
+- **Filtre ND-readiness** (únic a Catalunya)
+- **Agent IA** que classifica activitats automàticament
+- **Revisió humana** per casos límit
+- **Ingesta per email** (les entitats envien, l'agent processa)
+- **Gratuït i obert**
+
+## Arquitectura
+
+```
+apps/web        → Frontend públic (Astro + Svelte)
+apps/admin      → Panel d'administració (SvelteKit)
+packages/agent  → Agent classificador (Claude Haiku)
+packages/scraper→ Scraping de fonts
+workers/email   → Ingesta d'emails (Cloudflare)
 ```
 
-## Developing
+## Desenvolupament
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+```bash
+# Instal·lar dependències
+pnpm install
 
-```sh
-npm run dev
+# Executar en mode dev
+pnpm dev
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# Construir per producció
+pnpm build
 ```
 
-## Building
+## Documentació
 
-To create a production version of your app:
+- [Criteris editorials](docs/EDITORIAL_GUIDELINES.md)
+- [Criteris ND](docs/ND_CRITERIA.md)
+- [Com contribuir](docs/CONTRIBUTING.md)
 
-```sh
-npm run build
-```
+## Crèdits
 
-You can preview the production build with `npm run preview`.
+Un projecte de [Weird Wired Humans](https://weirdwiredhumans.com)
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+---
+
+*Amb el suport de la comunitat del Vallès Oriental*
