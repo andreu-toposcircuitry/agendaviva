@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Pàgina no trobada">
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="text-center">
+      <h1 class="text-9xl font-bold text-primary-600">404</h1>
+      <p class="text-2xl font-semibold text-gray-800 mt-4">Pàgina no trobada</p>
+      <p class="text-gray-600 mt-2 mb-8">
+        Ho sentim, la pàgina que cerques no existeix o ha estat moguda.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <a href="/" class="btn btn-primary">
+          Torna a l'inici
+        </a>
+        <a href="/cerca" class="btn btn-secondary">
+          Cerca activitats
+        </a>
+      </div>
+    </div>
+  </div>
+</Base>

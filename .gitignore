@@ -137,3 +137,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Astro
+.astro/
+
+# Temporary files
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
