@@ -8,6 +8,13 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: userInput })
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      aiResponse = `Error: ${errorData.error || 'Failed to get response'}`;
+      return;
+    }
+    
     const data = await res.json();
     aiResponse = data.choices?.[0]?.message?.content || 'No response!';
   }
