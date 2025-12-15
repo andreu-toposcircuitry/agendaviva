@@ -1,0 +1,75 @@
+---
+import Base from '../../layouts/Base.astro';
+import ActivityCard from '../../components/ActivityCard.svelte';
+import { supabase } from '../../lib/supabase';
+import { TIPOLOGIES } from '@agendaviva/shared/constants';
+
+const { tipologia } = Astro.params;
+
+if (!tipologia || !(tipologia in TIPOLOGIES)) {
+  return Astro.redirect('/404');
+}
+
+const tipologiaInfo = TIPOLOGIES[tipologia as keyof typeof TIPOLOGIES];
+
+const { data: activitats, error } = await supabase
+  .from('activitats')
+  .select('*')
+  .eq('estat', 'publicada')
+  .eq('tipologia_principal', tipologia)
+  .order('nd_score', { ascending: false });
+---
+
+<Base title={`Activitats de ${tipologiaInfo.nom}`}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <div class="text-6xl mb-4">{tipologiaInfo.icon}</div>
+      <h1 class="text-4xl font-bold mb-4">{tipologiaInfo.nom}</h1>
+      <p class="text-lg text-gray-600">
+        {activitats?.length || 0} activitats trobades
+      </p>
+    </div>
+
+    <!-- Subtipologies filter -->
+    {tipologiaInfo.subtipologies.length > 0 && (
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3">Subtipologies</h2>
+        <div class="flex flex-wrap gap-2">
+          {tipologiaInfo.subtipologies.map(sub => (
+            <a 
+              href={`/cerca?tipologia=${tipologia}&subtipologia=${sub}`}
+              class="btn btn-secondary text-sm"
+            >
+              {sub}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Results -->
+    {error && (
+      <div class="bg-red-50 text-red-800 p-4 rounded-lg">
+        Error carregant activitats
+      </div>
+    )}
+
+    {activitats && activitats.length > 0 ? (
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {activitats.map(activitat => (
+          <ActivityCard activity={activitat} client:load />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-xl text-gray-600">
+          Encara no hi ha activitats d'aquesta categoria
+        </p>
+        <a href="/proposa" class="text-primary-600 hover:text-primary-800 mt-4 inline-block">
+          Proposa'n una →
+        </a>
+      </div>
+    )}
+  </div>
+</Base>

@@ -1,0 +1,278 @@
+---
+import Base from '../../layouts/Base.astro';
+import NDScore from '../../components/NDScore.svelte';
+import { supabase } from '../../lib/supabase';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const { data: activitat, error } = await supabase
+  .from('activitats')
+  .select('*, entitats(*)')
+  .eq('slug', slug)
+  .eq('estat', 'publicada')
+  .single();
+
+if (error || !activitat) {
+  return Astro.redirect('/404');
+}
+---
+
+<Base title={activitat.nom}>
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+        <a href="/" class="hover:text-primary-600">Inici</a>
+        <span>›</span>
+        <a href={`/categoria/${activitat.tipologia_principal}`} class="hover:text-primary-600">
+          {activitat.tipologia_principal}
+        </a>
+        <span>›</span>
+        <span>{activitat.nom}</span>
+      </div>
+      
+      <h1 class="text-4xl font-bold mb-4">{activitat.nom}</h1>
+      
+      <div class="flex flex-wrap gap-4 text-gray-600 mb-4">
+        <span>📍 {activitat.municipi}</span>
+        {activitat.edat_text && <span>👶 {activitat.edat_text}</span>}
+        {activitat.quan_es_fa && <span>📅 {activitat.quan_es_fa}</span>}
+      </div>
+
+      {activitat.nd_score && (
+        <div class="mb-4">
+          <NDScore score={activitat.nd_score} nivell={activitat.nd_nivell} client:load />
+        </div>
+      )}
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Main info -->
+      <div class="md:col-span-2 space-y-6">
+        {activitat.descripcio && (
+          <section class="card">
+            <h2 class="text-xl font-bold mb-3">Descripció</h2>
+            <p class="text-gray-700 whitespace-pre-line">{activitat.descripcio}</p>
+          </section>
+        )}
+
+        <!-- ND Details -->
+        {activitat.nd_score && (
+          <section class="card bg-blue-50">
+            <h2 class="text-xl font-bold mb-3">Informació ND (Neurodivergència)</h2>
+            
+            {activitat.nd_justificacio && (
+              <div class="mb-4">
+                <h3 class="font-semibold mb-2">Justificació</h3>
+                <p class="text-gray-700">{activitat.nd_justificacio}</p>
+              </div>
+            )}
+
+            {activitat.nd_indicadors_positius?.length > 0 && (
+              <div class="mb-4">
+                <h3 class="font-semibold mb-2 text-green-800">✓ Indicadors positius</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                  {activitat.nd_indicadors_positius.map((ind: string) => (
+                    <li>{ind}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activitat.nd_indicadors_negatius?.length > 0 && (
+              <div class="mb-4">
+                <h3 class="font-semibold mb-2 text-orange-800">⚠ Possibles barreres</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                  {activitat.nd_indicadors_negatius.map((ind: string) => (
+                    <li>{ind}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activitat.nd_recomanacions?.length > 0 && (
+              <div>
+                <h3 class="font-semibold mb-2">💡 Recomanacions</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                  {activitat.nd_recomanacions.map((rec: string) => (
+                    <li>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div class="mt-4 text-xs text-gray-600 border-t pt-3">
+              Confiança: {activitat.nd_confianca || 50}% · 
+              Verificat: {activitat.nd_verificat_per || 'inferit'}
+            </div>
+
+            <a href="/que-es-nd" class="block mt-3 text-primary-600 hover:text-primary-800 text-sm">
+              Més informació sobre la puntuació ND →
+            </a>
+          </section>
+        )}
+
+        <!-- Categories & Tags -->
+        {(activitat.tipologies?.length > 0 || activitat.tags?.length > 0) && (
+          <section class="card">
+            <h2 class="text-xl font-bold mb-3">Categories i etiquetes</h2>
+            
+            <div class="flex flex-wrap gap-2">
+              {activitat.tipologies?.map((tip: any) => (
+                <a 
+                  href={`/categoria/${tip.codi}`}
+                  class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200"
+                >
+                  {tip.codi}
+                </a>
+              ))}
+              
+              {activitat.tags?.map((tag: string) => (
+                <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        <!-- Schedule & Details -->
+        <section class="card">
+          <h2 class="font-bold mb-3">Detalls</h2>
+          
+          <dl class="space-y-3 text-sm">
+            {activitat.dies && (
+              <div>
+                <dt class="font-semibold text-gray-600">Dies</dt>
+                <dd>{activitat.dies}</dd>
+              </div>
+            )}
+            
+            {activitat.horari && (
+              <div>
+                <dt class="font-semibold text-gray-600">Horari</dt>
+                <dd>{activitat.horari}</dd>
+              </div>
+            )}
+            
+            {activitat.preu && (
+              <div>
+                <dt class="font-semibold text-gray-600">Preu</dt>
+                <dd class="text-lg font-bold text-primary-600">{activitat.preu}</dd>
+                {activitat.preu_observacions && (
+                  <dd class="text-xs text-gray-600 mt-1">{activitat.preu_observacions}</dd>
+                )}
+              </div>
+            )}
+            
+            {activitat.espai && (
+              <div>
+                <dt class="font-semibold text-gray-600">Espai</dt>
+                <dd>{activitat.espai}</dd>
+              </div>
+            )}
+            
+            {activitat.barri_zona && (
+              <div>
+                <dt class="font-semibold text-gray-600">Zona</dt>
+                <dd>{activitat.barri_zona}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        <!-- Contact -->
+        <section class="card bg-primary-50">
+          <h2 class="font-bold mb-3">Contacte</h2>
+          
+          <div class="space-y-3">
+            {activitat.web && (
+              <a 
+                href={activitat.web}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary w-full text-center"
+              >
+                🌐 Visita la web
+              </a>
+            )}
+            
+            {activitat.link_inscripcio && (
+              <a 
+                href={activitat.link_inscripcio}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn bg-green-600 text-white hover:bg-green-700 w-full text-center"
+              >
+                ✓ Inscriu-te
+              </a>
+            )}
+            
+            {activitat.telefon && (
+              <a 
+                href={`tel:${activitat.telefon}`}
+                class="btn btn-secondary w-full text-center"
+              >
+                📞 {activitat.telefon}
+              </a>
+            )}
+            
+            {activitat.email && (
+              <a 
+                href={`mailto:${activitat.email}`}
+                class="btn btn-secondary w-full text-center text-sm"
+              >
+                ✉️ Enviar email
+              </a>
+            )}
+          </div>
+        </section>
+
+        <!-- Entity info -->
+        {activitat.entitats && (
+          <section class="card">
+            <h2 class="font-bold mb-3">Entitat</h2>
+            <p class="font-medium">{activitat.entitats.nom}</p>
+            {activitat.entitats.web && (
+              <a 
+                href={activitat.entitats.web}
+                target="_blank"
+                class="text-sm text-primary-600 hover:text-primary-800"
+              >
+                Més informació →
+              </a>
+            )}
+          </section>
+        )}
+
+        <!-- Report error -->
+        <section class="card bg-gray-50">
+          <p class="text-sm text-gray-600 mb-2">
+            Has trobat informació incorrecta o desactualitzada?
+          </p>
+          <button class="text-sm text-primary-600 hover:text-primary-800 font-medium">
+            Reporta un error
+          </button>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Footer info -->
+    <div class="mt-8 p-4 bg-gray-50 rounded-lg text-xs text-gray-600">
+      <p>
+        Última verificació: {new Date(activitat.last_verified).toLocaleDateString('ca-ES')}
+        {activitat.font_url && (
+          <span> · Font: <a href={activitat.font_url} target="_blank" class="text-primary-600 hover:underline">enllaç</a></span>
+        )}
+      </p>
+    </div>
+  </article>
+</Base>

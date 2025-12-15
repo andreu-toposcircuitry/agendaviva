@@ -1,0 +1,84 @@
+---
+import Base from '../layouts/Base.astro';
+import ActivityCard from '../components/ActivityCard.svelte';
+import { supabase } from '../lib/supabase';
+
+const { data: activitats, error } = await supabase
+  .from('activitats')
+  .select('*')
+  .eq('estat', 'publicada')
+  .gte('nd_score', 4)
+  .order('nd_score', { ascending: false });
+---
+
+<Base title="Activitats ND-Friendly">
+  <div class="bg-gradient-to-br from-green-500 to-green-700 text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-5xl font-bold mb-4">Activitats ND-Friendly</h1>
+      <p class="text-xl text-green-100 mb-6">
+        Activitats amb alta adequació per a persones neurodivergents
+      </p>
+      <p class="text-lg">
+        Mostrant activitats amb puntuació ND ≥ 4
+      </p>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Info box -->
+    <div class="card bg-blue-50 mb-8">
+      <h2 class="text-xl font-bold mb-3">Què són les activitats ND-Friendly?</h2>
+      <p class="mb-4">
+        Les activitats amb puntuació ND alta (4 o 5) tenen característiques que les fan 
+        especialment adequades per a persones neurodivergents: grups reduïts, ritme flexible, 
+        rutines estructurades, ambient tranquil, professionals amb formació específica, etc.
+      </p>
+      <a href="/que-es-nd" class="text-primary-600 hover:text-primary-800 font-medium">
+        Més informació sobre els criteris ND →
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">Filtra per puntuació</h2>
+      <div class="flex gap-3">
+        <a href="/nd-friendly" class="btn btn-primary">
+          Totes (≥4)
+        </a>
+        <a href="/cerca?nd_min=5" class="btn btn-secondary">
+          Només 5 estrelles
+        </a>
+      </div>
+    </div>
+
+    <!-- Results -->
+    {error && (
+      <div class="bg-red-50 text-red-800 p-4 rounded-lg">
+        Error carregant activitats
+      </div>
+    )}
+
+    {activitats && activitats.length > 0 ? (
+      <>
+        <p class="text-gray-600 mb-6">
+          {activitats.length} activitats ND-Friendly trobades
+        </p>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {activitats.map(activitat => (
+            <ActivityCard activity={activitat} client:load />
+          ))}
+        </div>
+      </>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-xl text-gray-600">
+          Encara no hi ha activitats ND-Friendly registrades
+        </p>
+        <a href="/proposa" class="text-primary-600 hover:text-primary-800 mt-4 inline-block">
+          Proposa'n una →
+        </a>
+      </div>
+    )}
+  </div>
+</Base>
