@@ -1,0 +1,2 @@
+-- Seed data for AgendaViva VO
+-- See P12 for implementation
