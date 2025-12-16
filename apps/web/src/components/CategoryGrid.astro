@@ -1,0 +1,37 @@
+---
+interface Tipologia {
+  codi: string;
+  nom: string;
+  descripcio: string;
+  icona: string;
+  color: string;
+}
+
+interface Props {
+  tipologies: Tipologia[];
+}
+
+const { tipologies } = Astro.props;
+---
+
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+  {tipologies.map((tip) => (
+    <a
+      href={`/categoria/${tip.codi}`}
+      class="group p-4 rounded-xl border-2 border-gray-200 hover:border-green-500 transition-colors bg-white"
+    >
+      <span class="text-3xl block mb-2">{tip.icona}</span>
+      <h3 class="font-semibold group-hover:text-green-600 transition-colors">{tip.nom}</h3>
+      <p class="text-sm text-gray-500 mt-1 line-clamp-2">{tip.descripcio}</p>
+    </a>
+  ))}
+</div>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

@@ -1,0 +1,92 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import SearchBox from '../components/SearchBox.svelte';
+import CategoryGrid from '../components/CategoryGrid.astro';
+import ActivityList from '../components/ActivityList.astro';
+import { getActivitats, getNDFriendlyActivitats } from '../lib/supabase';
+import { TIPOLOGIES, type Tipologia } from '@agendaviva/shared';
+
+const { data: featured } = await getActivitats({ limit: 6 });
+const { data: ndFriendly } = await getNDFriendlyActivitats(3);
+
+const tipologies = Object.values(TIPOLOGIES) as Tipologia[];
+---
+
+<Base title="Inici">
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-green-700 to-green-800 text-white py-16">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h1 class="text-3xl md:text-4xl font-bold mb-4 text-balance">
+        Troba activitats per a infants i joves al Valles Oriental
+      </h1>
+      <p class="text-green-100 mb-8 text-lg">
+        El primer directori amb classificacio ND-readiness per a families neurodivergents
+      </p>
+      <SearchBox client:load />
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="max-w-6xl mx-auto px-4 py-12">
+    <h2 class="text-2xl font-bold mb-6">Categories</h2>
+    <CategoryGrid tipologies={tipologies} />
+  </section>
+
+  <!-- Featured Activities -->
+  {featured && featured.length > 0 && (
+    <section class="max-w-6xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Activitats destacades</h2>
+        <a href="/cerca" class="text-green-600 hover:text-green-800 text-sm font-medium">
+          Veure totes &rarr;
+        </a>
+      </div>
+      <ActivityList activities={featured} />
+    </section>
+  )}
+
+  <!-- ND-Friendly Section -->
+  <section class="max-w-6xl mx-auto px-4 py-12">
+    <div class="bg-green-50 rounded-2xl p-8">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-3xl" aria-hidden="true">[ND]</span>
+        <h2 class="text-2xl font-bold">ND-Friendly</h2>
+      </div>
+      <p class="text-gray-600 mb-6 max-w-2xl">
+        Activitats especialment adaptades per a infants neurodivergents (TDAH, TEA, alta sensibilitat).
+        Aquestes activitats tenen una puntuacio ND de 4 o mes, indicant que son especialment adequades
+        per a infants amb necessitats especifiques.
+      </p>
+
+      {ndFriendly && ndFriendly.length > 0 && (
+        <div class="mb-6">
+          <ActivityList activities={ndFriendly} />
+        </div>
+      )}
+
+      <div class="flex flex-wrap gap-4">
+        <a href="/nd-friendly" class="btn btn-primary">
+          Veure activitats ND-Friendly &rarr;
+        </a>
+        <a href="/que-es-nd" class="btn btn-secondary">
+          Que es l'escala ND?
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="max-w-6xl mx-auto px-4 py-12">
+    <div class="bg-gray-100 rounded-2xl p-8 text-center">
+      <h2 class="text-2xl font-bold mb-4">Coneixes una activitat que no esta al directori?</h2>
+      <p class="text-gray-600 mb-6">
+        Ajuda'ns a completar el directori proposant noves activitats per a infants i joves del Valles Oriental.
+      </p>
+      <a href="/proposa" class="btn btn-primary">
+        Proposa una activitat
+      </a>
+    </div>
+  </section>
+</Base>

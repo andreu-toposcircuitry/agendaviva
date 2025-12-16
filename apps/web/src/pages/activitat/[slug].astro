@@ -1,0 +1,265 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import NDScore from '../../components/NDScore.svelte';
+import FavoritesButton from '../../components/FavoritesButton.svelte';
+import { getActivitat, getActivitatsByTipologia } from '../../lib/supabase';
+import { TIPOLOGIES, ND_LEVELS, type TipologiaCodi } from '@agendaviva/shared';
+
+const { slug } = Astro.params;
+const { data: activity, error } = await getActivitat(slug!);
+
+if (error || !activity) {
+  return Astro.redirect('/404');
+}
+
+// Get related activities
+const { data: related } = await getActivitatsByTipologia(activity.tipologia_principal, 4);
+const relatedActivities = related?.filter(a => a.id !== activity.id).slice(0, 3);
+
+const tipologia = TIPOLOGIES[activity.tipologia_principal as TipologiaCodi];
+const ndLevel = activity.nd_score ? ND_LEVELS[activity.nd_score as keyof typeof ND_LEVELS] : null;
+---
+
+<Base title={activity.nom} description={activity.descripcio}>
+  <article class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500 mb-6">
+      <a href="/" class="hover:text-green-600">Inici</a>
+      <span class="mx-2">/</span>
+      <a href={`/categoria/${activity.tipologia_principal}`} class="hover:text-green-600">
+        {tipologia?.nom || activity.tipologia_principal}
+      </a>
+      <span class="mx-2">/</span>
+      <span class="text-gray-700">{activity.nom}</span>
+    </nav>
+
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold">{activity.nom}</h1>
+          <p class="text-gray-500 mt-2 flex flex-wrap gap-2 items-center">
+            {tipologia && (
+              <span class="inline-flex items-center gap-1">
+                <span>{tipologia.icona}</span>
+                {tipologia.nom}
+              </span>
+            )}
+            {activity.municipi_nom && (
+              <>
+                <span class="mx-1">·</span>
+                <a href={`/municipi/${activity.municipi_id}`} class="hover:text-green-600">
+                  {activity.municipi_nom}
+                </a>
+              </>
+            )}
+          </p>
+        </div>
+        <FavoritesButton activitatId={activity.id} client:load />
+      </div>
+
+      {activity.entitat_nom && (
+        <p class="mt-3 text-gray-600">
+          Organitza: <strong>{activity.entitat_nom}</strong>
+          {activity.entitat_verificada && (
+            <span class="text-green-600 ml-1" title="Entitat verificada">[V]</span>
+          )}
+        </p>
+      )}
+    </header>
+
+    <!-- ND Score Section -->
+    {activity.nd_score && ndLevel && (
+      <section class="mb-8 p-6 bg-gray-50 rounded-xl">
+        <h2 class="text-lg font-semibold mb-4">Classificacio ND-Readiness</h2>
+        <NDScore score={activity.nd_score} nivell={activity.nd_nivell} client:visible />
+
+        {activity.nd_justificacio && (
+          <p class="mt-4 text-gray-600">{activity.nd_justificacio}</p>
+        )}
+
+        {activity.nd_indicadors_positius && activity.nd_indicadors_positius.length > 0 && (
+          <div class="mt-4">
+            <h3 class="font-medium text-green-700 mb-2">Indicadors positius:</h3>
+            <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+              {activity.nd_indicadors_positius.map((i: string) => <li>{i}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {activity.nd_indicadors_negatius && activity.nd_indicadors_negatius.length > 0 && (
+          <div class="mt-4">
+            <h3 class="font-medium text-amber-700 mb-2">Aspectes a tenir en compte:</h3>
+            <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+              {activity.nd_indicadors_negatius.map((i: string) => <li>{i}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {activity.nd_recomanacions && activity.nd_recomanacions.length > 0 && (
+          <div class="mt-4">
+            <h3 class="font-medium text-blue-700 mb-2">Recomanacions:</h3>
+            <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+              {activity.nd_recomanacions.map((r: string) => <li>{r}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <p class="mt-4 text-xs text-gray-400">
+          <a href="/que-es-nd" class="underline hover:text-gray-600">
+            Que es l'escala ND?
+          </a>
+          {activity.nd_verificat_per && (
+            <span class="ml-2">
+              · Verificat: {activity.nd_verificat_per}
+            </span>
+          )}
+        </p>
+      </section>
+    )}
+
+    <!-- Main Info Grid -->
+    <section class="grid md:grid-cols-2 gap-8 mb-8">
+      <div>
+        <h2 class="font-semibold mb-3">Informacio</h2>
+        <dl class="space-y-3 text-sm">
+          {activity.edat_text && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Edat</dt>
+              <dd>{activity.edat_text}</dd>
+            </div>
+          )}
+          {activity.dies && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Dies</dt>
+              <dd>{activity.dies}</dd>
+            </div>
+          )}
+          {activity.horari && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Horari</dt>
+              <dd>{activity.horari}</dd>
+            </div>
+          )}
+          {activity.preu && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Preu</dt>
+              <dd>{activity.preu}</dd>
+            </div>
+          )}
+          {activity.espai && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Espai</dt>
+              <dd>{activity.espai}</dd>
+            </div>
+          )}
+          {activity.adreca && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Adreca</dt>
+              <dd>{activity.adreca}</dd>
+            </div>
+          )}
+          {activity.es_online && (
+            <div class="flex gap-2">
+              <dt class="text-gray-500 w-24 flex-shrink-0">Format</dt>
+              <dd>Online / virtual</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+
+      <div>
+        <h2 class="font-semibold mb-3">Contacte</h2>
+        <div class="space-y-3">
+          {activity.contacte_email && (
+            <a
+              href={`mailto:${activity.contacte_email}`}
+              class="flex items-center gap-2 text-green-600 hover:text-green-800"
+            >
+              <span>@</span>
+              {activity.contacte_email}
+            </a>
+          )}
+          {activity.contacte_telefon && (
+            <a
+              href={`tel:${activity.contacte_telefon}`}
+              class="flex items-center gap-2 text-green-600 hover:text-green-800"
+            >
+              <span>#</span>
+              {activity.contacte_telefon}
+            </a>
+          )}
+          {activity.contacte_web && (
+            <a
+              href={activity.contacte_web}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-2 text-green-600 hover:text-green-800"
+            >
+              <span>&gt;</span>
+              Web
+            </a>
+          )}
+          {activity.link_inscripcio && (
+            <a
+              href={activity.link_inscripcio}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary mt-4 w-full md:w-auto"
+            >
+              Inscriu-te &rarr;
+            </a>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <!-- Description -->
+    {activity.descripcio && (
+      <section class="mb-8">
+        <h2 class="font-semibold mb-3">Descripcio</h2>
+        <div class="prose max-w-none text-gray-600">
+          <p>{activity.descripcio}</p>
+        </div>
+      </section>
+    )}
+
+    <!-- Tags -->
+    {activity.tags && activity.tags.length > 0 && (
+      <section class="mb-8">
+        <h2 class="font-semibold mb-3">Etiquetes</h2>
+        <div class="flex flex-wrap gap-2">
+          {activity.tags.map((tag: string) => (
+            <span class="badge bg-gray-100 text-gray-700">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Related Activities -->
+    {relatedActivities && relatedActivities.length > 0 && (
+      <section class="mt-12 pt-8 border-t">
+        <h2 class="text-xl font-bold mb-6">Activitats similars</h2>
+        <div class="grid gap-4 md:grid-cols-3">
+          {relatedActivities.map((related) => (
+            <a href={`/activitat/${related.slug}`} class="card hover:border-green-500">
+              <h3 class="font-semibold">{related.nom}</h3>
+              <p class="text-sm text-gray-500 mt-1">{related.municipi_nom}</p>
+              {related.nd_score && (
+                <div class="mt-2">
+                  <span class="badge bg-green-100 text-green-700">
+                    ND {related.nd_score}/5
+                  </span>
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </article>
+</Base>

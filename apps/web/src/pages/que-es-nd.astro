@@ -1,0 +1,135 @@
+---
+import Base from '../layouts/Base.astro';
+import NDScore from '../components/NDScore.svelte';
+import { ND_LEVELS, type NDLevel } from '@agendaviva/shared';
+
+const ndLevels = Object.values(ND_LEVELS) as NDLevel[];
+---
+
+<Base title="Que es l'escala ND?" description="Explicacio del sistema de classificacio ND-readiness per a activitats">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-12">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Que es l'escala ND?</span>
+      </nav>
+
+      <h1 class="text-3xl font-bold mb-4">Que es l'escala ND-readiness?</h1>
+      <p class="text-xl text-gray-600">
+        Una guia per ajudar les families a trobar activitats adequades per a infants neurodivergents.
+      </p>
+    </header>
+
+    <!-- Introduction -->
+    <section class="prose max-w-none mb-12">
+      <p>
+        L'escala <strong>ND-readiness</strong> (Neurodiversity-readiness) es un sistema de classificacio
+        desenvolupat per Agenda Viva VO per ajudar les families amb infants neurodivergents a identificar
+        activitats que s'adaptin millor a les seves necessitats.
+      </p>
+      <p>
+        La neurodiversitat inclou una amplia gamma de condicions neurologiques com:
+      </p>
+      <ul>
+        <li><strong>TDAH</strong> (Trastorn per Deficit d'Atencio amb Hiperactivitat)</li>
+        <li><strong>TEA</strong> (Trastorn de l'Espectre Autista)</li>
+        <li><strong>Alta sensibilitat</strong> (PAS - Persones Altament Sensibles)</li>
+        <li><strong>Dislexia</strong> i altres dificultats d'aprenentatge</li>
+        <li><strong>Altes capacitats</strong></li>
+        <li>I moltes altres variacions neurologiques</li>
+      </ul>
+    </section>
+
+    <!-- Levels explanation -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-6">Els 5 nivells de l'escala</h2>
+
+      <div class="space-y-6">
+        {ndLevels.reverse().map((level) => (
+          <div class="border rounded-xl p-6">
+            <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+              <NDScore score={level.score} client:visible />
+              <div>
+                <h3 class="text-xl font-semibold">{level.nom}</h3>
+                <p class="text-gray-600">{level.descripcio}</p>
+              </div>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-medium text-sm text-gray-500 mb-2">Criteris:</h4>
+              <ul class="grid md:grid-cols-2 gap-2">
+                {level.criteris.map((criteri: string) => (
+                  <li class="flex items-center gap-2 text-sm text-gray-600">
+                    <span class="text-green-600">+</span>
+                    {criteri}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- How we evaluate -->
+    <section class="mb-12 bg-gray-50 rounded-2xl p-8">
+      <h2 class="text-2xl font-bold mb-6">Com avaluem les activitats?</h2>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="font-semibold mb-2">1. Analisi de la informacio publica</h3>
+          <p class="text-gray-600">
+            Revisem la informacio disponible de l'activitat: descripcio, metodologia, ratio de participants,
+            tipus d'espai, i qualsevol mencio a adaptacions o inclusio.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-semibold mb-2">2. Classificacio automatica</h3>
+          <p class="text-gray-600">
+            Utilitzem un sistema d'intel·ligencia artificial per fer una classificacio inicial basada
+            en indicadors positius i negatius detectats a la descripcio.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-semibold mb-2">3. Revisio humana</h3>
+          <p class="text-gray-600">
+            Totes les classificacions son revisades per persones del nostre equip, especialment
+            aquelles amb puntuacions altes (4-5) o baixes (1-2).
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-semibold mb-2">4. Feedback de la comunitat</h3>
+          <p class="text-gray-600">
+            Les families i les entitats poden proposar actualitzacions a les classificacions
+            basades en la seva experiencia real.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Disclaimer -->
+    <section class="mb-12 border-l-4 border-amber-400 pl-6 py-2">
+      <h2 class="font-bold mb-2">Important</h2>
+      <p class="text-gray-600">
+        L'escala ND es una guia orientativa. Cada infant es unic, i el que funciona per a un
+        pot no funcionar per a un altre. Recomanem sempre contactar directament amb l'entitat
+        organitzadora per comentar les necessitats especifiques del vostre fill o filla.
+      </p>
+    </section>
+
+    <!-- CTA -->
+    <section class="text-center">
+      <h2 class="text-xl font-bold mb-4">Troba activitats ND-Friendly</h2>
+      <p class="text-gray-600 mb-6">
+        Descobreix activitats amb puntuacio 4 o superior al Valles Oriental.
+      </p>
+      <a href="/nd-friendly" class="btn btn-primary">
+        Veure activitats ND-Friendly &rarr;
+      </a>
+    </section>
+  </div>
+</Base>

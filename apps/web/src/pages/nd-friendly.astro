@@ -1,0 +1,83 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import ActivityList from '../components/ActivityList.astro';
+import NDScore from '../components/NDScore.svelte';
+import { getNDFriendlyActivitats } from '../lib/supabase';
+
+const { data: activities, count } = await getNDFriendlyActivitats(50);
+---
+
+<Base title="Activitats ND-Friendly" description="Activitats adaptades per a infants neurodivergents al Valles Oriental">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">ND-Friendly</span>
+      </nav>
+
+      <div class="flex items-center gap-4 mb-4">
+        <span class="text-5xl" aria-hidden="true">[ND]</span>
+        <h1 class="text-3xl font-bold">Activitats ND-Friendly</h1>
+      </div>
+
+      <p class="text-gray-600 max-w-3xl">
+        Aquestes activitats tenen una puntuacio ND de 4 o mes, el que indica que son especialment
+        adequades per a infants neurodivergents (TDAH, TEA, alta sensibilitat, dislexia, i altres).
+      </p>
+    </header>
+
+    <!-- Info boxes -->
+    <section class="grid md:grid-cols-2 gap-6 mb-12">
+      <div class="bg-green-50 rounded-xl p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <NDScore score={5} compact client:visible />
+          <span class="font-semibold">ND-Excel·lent</span>
+        </div>
+        <p class="text-sm text-gray-600">
+          Activitats dissenyades explicitament per ser inclusives, amb adaptacions especifiques,
+          grups reduïts, i personal format en neurodiversitat.
+        </p>
+      </div>
+
+      <div class="bg-green-50 rounded-xl p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <NDScore score={4} compact client:visible />
+          <span class="font-semibold">ND-Preparat</span>
+        </div>
+        <p class="text-sm text-gray-600">
+          Activitats amb estructures naturalment compatibles: horaris fixes, ratios favorables,
+          ambient tranquil, i organitzacio clara.
+        </p>
+      </div>
+    </section>
+
+    <!-- Results count -->
+    <p class="text-gray-500 mb-6">
+      {count || 0} activitats ND-Friendly trobades
+    </p>
+
+    <!-- Activities -->
+    <section class="mb-12">
+      <ActivityList
+        activities={activities}
+        emptyMessage="No hi ha activitats ND-Friendly disponibles en aquest moment."
+      />
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-gray-100 rounded-2xl p-8 text-center">
+      <h2 class="text-xl font-bold mb-4">Vols saber mes sobre l'escala ND?</h2>
+      <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+        L'escala ND-readiness es un sistema de classificacio que ajuda les families
+        a identificar activitats adequades per a infants neurodivergents.
+      </p>
+      <a href="/que-es-nd" class="btn btn-primary">
+        Descobreix l'escala ND &rarr;
+      </a>
+    </section>
+  </div>
+</Base>

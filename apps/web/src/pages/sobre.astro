@@ -1,0 +1,156 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Sobre Agenda Viva VO" description="Sobre el projecte Agenda Viva VO i Weird Wired Humans">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-12">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Sobre</span>
+      </nav>
+
+      <h1 class="text-3xl font-bold mb-4">Sobre Agenda Viva VO</h1>
+      <p class="text-xl text-gray-600">
+        Un directori participatiu d'activitats per a infants i joves al Valles Oriental,
+        amb especial atencio a la neurodiversitat.
+      </p>
+    </header>
+
+    <!-- Mission -->
+    <section class="prose max-w-none mb-12">
+      <h2>La nostra missio</h2>
+      <p>
+        Agenda Viva VO neix de la necessitat de les families del Valles Oriental de trobar
+        activitats extraescolars adequades per als seus fills i filles. Especialment per a
+        aquelles families amb infants neurodivergents, que sovint tenen dificultats per
+        trobar opcions que s'adaptin a les seves necessitats.
+      </p>
+      <p>
+        El nostre objectiu es crear un <strong>directori complet, actualitzat i accessible</strong> que
+        inclogui informacio sobre el grau d'adaptacio de cada activitat a perfils neurodivergents.
+      </p>
+    </section>
+
+    <!-- What makes us different -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-6">Que ens fa diferents?</h2>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card">
+          <h3 class="font-semibold mb-2">Classificacio ND-readiness</h3>
+          <p class="text-gray-600 text-sm">
+            Som el primer directori a Catalunya que inclou una classificacio sistematica
+            del grau d'adaptacio de les activitats a infants neurodivergents.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-2">Participatiu</h3>
+          <p class="text-gray-600 text-sm">
+            Qualsevol persona pot proposar noves activitats o suggerir correccions.
+            Les entitats poden reclamar el seu perfil i mantenir-lo actualitzat.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-2">Obert i transparent</h3>
+          <p class="text-gray-600 text-sm">
+            El codi del projecte es obert i public. Expliquem com funciona la nostra
+            classificacio ND i acceptem suggeriments de millora.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-2">Local</h3>
+          <p class="text-gray-600 text-sm">
+            Ens centrem en el Valles Oriental, cobrint tots els municipis de la comarca
+            amb un coneixement profund del territori.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WWH -->
+    <section class="mb-12 bg-gray-50 rounded-2xl p-8">
+      <h2 class="text-2xl font-bold mb-4">Un projecte de Weird Wired Humans</h2>
+      <p class="text-gray-600 mb-6">
+        Agenda Viva VO es un projecte de{' '}
+        <a
+          href="https://weirdwiredhumans.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-green-600 hover:text-green-800 underline"
+        >
+          Weird Wired Humans
+        </a>, una iniciativa centrada en crear eines i recursos per a la comunitat neurodivergent.
+      </p>
+      <p class="text-gray-600">
+        Creiem que la neurodiversitat es una part natural de la variacio humana, i treballem
+        per crear un mon mes accessible i comprensi per a totes les persones, independentment
+        de com funciona el seu cervell.
+      </p>
+    </section>
+
+    <!-- How to contribute -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-6">Com pots col·laborar?</h2>
+
+      <div class="space-y-4">
+        <div class="flex gap-4 items-start">
+          <span class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold">1</span>
+          <div>
+            <h3 class="font-semibold">Proposa activitats</h3>
+            <p class="text-gray-600 text-sm">
+              Coneixes una activitat que no esta al directori?{' '}
+              <a href="/proposa" class="text-green-600 hover:underline">Proposa-la!</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <span class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold">2</span>
+          <div>
+            <h3 class="font-semibold">Suggereix correccions</h3>
+            <p class="text-gray-600 text-sm">
+              Si trobes informacio incorrecta o desactualitzada, fes-nos-ho saber.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <span class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold">3</span>
+          <div>
+            <h3 class="font-semibold">Comparteix</h3>
+            <p class="text-gray-600 text-sm">
+              Difon Agenda Viva VO entre altres families que puguin beneficiar-se'n.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <span class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold">4</span>
+          <div>
+            <h3 class="font-semibold">Contribueix al codi</h3>
+            <p class="text-gray-600 text-sm">
+              El projecte es de codi obert. Visita el nostre repositori a GitHub per contribuir.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="text-center border-t pt-12">
+      <h2 class="text-xl font-bold mb-4">Contacta'ns</h2>
+      <p class="text-gray-600 mb-4">
+        Tens preguntes, suggeriments o vols col·laborar?
+      </p>
+      <a href="mailto:hola@agendaviva.cat" class="btn btn-primary">
+        Escriu-nos a hola@agendaviva.cat
+      </a>
+    </section>
+  </div>
+</Base>

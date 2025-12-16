@@ -1,0 +1,202 @@
+---
+import Base from '../layouts/Base.astro';
+import { TIPOLOGIES, MUNICIPIS, type Tipologia, type Municipi } from '@agendaviva/shared';
+
+const tipologies = Object.values(TIPOLOGIES) as Tipologia[];
+const municipis = (Object.values(MUNICIPIS) as Municipi[]).sort((a, b) => a.nom.localeCompare(b.nom));
+---
+
+<Base title="Proposa una activitat" description="Proposa una nova activitat per al directori Agenda Viva VO">
+  <div class="max-w-2xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Proposa activitat</span>
+      </nav>
+
+      <h1 class="text-3xl font-bold mb-4">Proposa una activitat</h1>
+      <p class="text-gray-600">
+        Coneixes una activitat per a infants o joves al Valles Oriental que no esta
+        al nostre directori? Envia'ns la informacio i l'afegirem!
+      </p>
+    </header>
+
+    <!-- Form -->
+    <form
+      action="https://formspree.io/f/YOUR_FORM_ID"
+      method="POST"
+      class="space-y-6"
+    >
+      <!-- Activity name -->
+      <div>
+        <label for="nom" class="block text-sm font-medium text-gray-700 mb-1">
+          Nom de l'activitat *
+        </label>
+        <input
+          type="text"
+          id="nom"
+          name="nom"
+          required
+          class="input"
+          placeholder="Ex: Escola de Musica de Granollers"
+        />
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="tipologia" class="block text-sm font-medium text-gray-700 mb-1">
+          Categoria *
+        </label>
+        <select id="tipologia" name="tipologia" required class="input">
+          <option value="">Selecciona una categoria</option>
+          {tipologies.map((tip) => (
+            <option value={tip.codi}>
+              {tip.icona} {tip.nom}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <!-- Municipality -->
+      <div>
+        <label for="municipi" class="block text-sm font-medium text-gray-700 mb-1">
+          Municipi *
+        </label>
+        <select id="municipi" name="municipi" required class="input">
+          <option value="">Selecciona un municipi</option>
+          {municipis.map((m) => (
+            <option value={m.id}>{m.nom}</option>
+          ))}
+        </select>
+      </div>
+
+      <!-- Organization -->
+      <div>
+        <label for="entitat" class="block text-sm font-medium text-gray-700 mb-1">
+          Entitat organitzadora
+        </label>
+        <input
+          type="text"
+          id="entitat"
+          name="entitat"
+          class="input"
+          placeholder="Ex: Associacio Cultural de Cardedeu"
+        />
+      </div>
+
+      <!-- Age range -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="edat_min" class="block text-sm font-medium text-gray-700 mb-1">
+            Edat minima
+          </label>
+          <input
+            type="number"
+            id="edat_min"
+            name="edat_min"
+            min="0"
+            max="25"
+            class="input"
+            placeholder="Ex: 6"
+          />
+        </div>
+        <div>
+          <label for="edat_max" class="block text-sm font-medium text-gray-700 mb-1">
+            Edat maxima
+          </label>
+          <input
+            type="number"
+            id="edat_max"
+            name="edat_max"
+            min="0"
+            max="25"
+            class="input"
+            placeholder="Ex: 12"
+          />
+        </div>
+      </div>
+
+      <!-- Website -->
+      <div>
+        <label for="web" class="block text-sm font-medium text-gray-700 mb-1">
+          Web o xarxes socials
+        </label>
+        <input
+          type="url"
+          id="web"
+          name="web"
+          class="input"
+          placeholder="https://..."
+        />
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="descripcio" class="block text-sm font-medium text-gray-700 mb-1">
+          Descripcio o comentaris
+        </label>
+        <textarea
+          id="descripcio"
+          name="descripcio"
+          rows="4"
+          class="input"
+          placeholder="Explica'ns mes sobre l'activitat..."
+        ></textarea>
+      </div>
+
+      <!-- ND info -->
+      <div class="bg-green-50 rounded-xl p-4">
+        <label for="nd_info" class="block text-sm font-medium text-gray-700 mb-1">
+          Informacio sobre adaptacio ND (opcional)
+        </label>
+        <textarea
+          id="nd_info"
+          name="nd_info"
+          rows="3"
+          class="input bg-white"
+          placeholder="Si tens informacio sobre com s'adapta l'activitat a infants neurodivergents, explica'ns-ho aqui..."
+        ></textarea>
+        <p class="text-xs text-gray-500 mt-2">
+          Per exemple: grups reduïts, personal format, adaptacions, etc.
+        </p>
+      </div>
+
+      <!-- Contact info -->
+      <div>
+        <label for="contacte" class="block text-sm font-medium text-gray-700 mb-1">
+          El teu email (opcional)
+        </label>
+        <input
+          type="email"
+          id="contacte"
+          name="contacte"
+          class="input"
+          placeholder="Per si tenim dubtes sobre la proposta"
+        />
+      </div>
+
+      <!-- Submit -->
+      <div class="pt-4">
+        <button type="submit" class="btn btn-primary w-full">
+          Enviar proposta
+        </button>
+        <p class="text-xs text-gray-500 mt-4 text-center">
+          Revisarem la proposta i l'afegirem al directori si compleix els criteris.
+          Proces normal: 1-3 dies.
+        </p>
+      </div>
+    </form>
+
+    <!-- Alternative -->
+    <div class="mt-12 pt-8 border-t text-center">
+      <p class="text-gray-600 mb-4">
+        Prefereixes enviar-nos la informacio per email?
+      </p>
+      <a href="mailto:hola@agendaviva.cat?subject=Proposta d'activitat" class="text-green-600 hover:underline">
+        hola@agendaviva.cat
+      </a>
+    </div>
+  </div>
+</Base>

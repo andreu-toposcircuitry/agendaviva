@@ -1,0 +1,23 @@
+---
+import ActivityCard from './ActivityCard.svelte';
+import type { ActivitatPublic } from '../lib/supabase';
+
+interface Props {
+  activities: ActivitatPublic[] | null;
+  emptyMessage?: string;
+}
+
+const { activities, emptyMessage = "No s'han trobat activitats." } = Astro.props;
+---
+
+{activities && activities.length > 0 ? (
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    {activities.map((activity) => (
+      <ActivityCard activity={activity} client:visible />
+    ))}
+  </div>
+) : (
+  <p class="text-center text-gray-500 py-12">
+    {emptyMessage}
+  </p>
+)}
