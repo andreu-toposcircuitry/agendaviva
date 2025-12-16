@@ -5,7 +5,7 @@ import type { AgentInput } from '@agendaviva/shared';
 // Mock the client module
 vi.mock('../src/client.js', () => ({
   complete: vi.fn(),
-  getAnthropicClient: vi.fn(),
+  getOpenAIClient: vi.fn(),
   resetClient: vi.fn(),
 }));
 
@@ -46,7 +46,7 @@ describe('classifyActivity', () => {
 
     mockComplete.mockResolvedValue({
       text: JSON.stringify(mockResponse),
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 200,
     });
@@ -61,7 +61,7 @@ describe('classifyActivity', () => {
     expect(result.success).toBe(true);
     expect(result.output?.activitat.nom).toBe('Escola de Musica');
     expect(result.output?.nd.score).toBe(3);
-    expect(result.output?.modelUsed).toBe('claude-3-haiku-20240307');
+    expect(result.output?.modelUsed).toBe('gpt-4o-mini');
     expect(result.output?.processingTimeMs).toBeGreaterThanOrEqual(0);
   });
 
@@ -90,7 +90,7 @@ describe('classifyActivity', () => {
 
     mockComplete.mockResolvedValue({
       text: JSON.stringify(mockResponse),
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 200,
     });
@@ -131,7 +131,7 @@ describe('classifyActivity', () => {
 
     mockComplete.mockResolvedValue({
       text: JSON.stringify(mockResponse),
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 200,
     });
@@ -173,7 +173,7 @@ describe('classifyActivity', () => {
     // Response with extra text before and after JSON
     mockComplete.mockResolvedValue({
       text: `Aqui tens la resposta:\n\n${JSON.stringify(mockResponse)}\n\nEspero que sigui util.`,
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 200,
     });
@@ -192,7 +192,7 @@ describe('classifyActivity', () => {
   it('should return error when no JSON found', async () => {
     mockComplete.mockResolvedValue({
       text: 'No puc processar aquesta informacio.',
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 50,
     });
@@ -213,7 +213,7 @@ describe('classifyActivity', () => {
     // JSON with matching braces but invalid syntax inside
     mockComplete.mockResolvedValue({
       text: '{ "confianca": 80, "activitat": { "nom": broken } }',
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 50,
     });
@@ -252,7 +252,7 @@ describe('classifyActivity', () => {
 
     mockComplete.mockResolvedValue({
       text: JSON.stringify(invalidResponse),
-      model: 'claude-3-haiku-20240307',
+      model: 'gpt-4o-mini',
       inputTokens: 100,
       outputTokens: 200,
     });

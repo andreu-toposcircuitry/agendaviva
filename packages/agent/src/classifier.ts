@@ -15,11 +15,11 @@ export interface ClassificationOptions {
   hints?: ClassificationHints;
 }
 
-const DEFAULT_MODEL = 'claude-3-haiku-20240307';
+const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_TEMPERATURE = 0.2;
 
 /**
- * Classify an activity using Claude AI
+ * Classify an activity using OpenAI
  */
 export async function classifyActivity(
   input: AgentInput,
@@ -29,7 +29,7 @@ export async function classifyActivity(
   const { model = DEFAULT_MODEL, temperature = DEFAULT_TEMPERATURE, hints } = options;
 
   try {
-    // Call Claude
+    // Call OpenAI
     const response = await complete(SYSTEM_PROMPT, buildClassificationPrompt(input.text, hints), {
       model,
       temperature,
