@@ -1,0 +1,71 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import ActivityList from '../../components/ActivityList.astro';
+import { getActivitatsByTipologia } from '../../lib/supabase';
+import { TIPOLOGIES, type TipologiaCodi, type Tipologia } from '@agendaviva/shared';
+
+const { tipologia } = Astro.params;
+
+// Validate tipologia
+if (!tipologia || !(tipologia in TIPOLOGIES)) {
+  return Astro.redirect('/404');
+}
+
+const tipologiaData = TIPOLOGIES[tipologia as TipologiaCodi];
+const { data: activities, count } = await getActivitatsByTipologia(tipologia, 50);
+
+const otherCategories = (Object.values(TIPOLOGIES) as Tipologia[]).filter(t => t.codi !== tipologia).slice(0, 6);
+---
+
+<Base title={tipologiaData.nom} description={tipologiaData.descripcio}>
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Categories</span>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">{tipologiaData.nom}</span>
+      </nav>
+
+      <div class="flex items-center gap-4">
+        <span class="text-5xl">{tipologiaData.icona}</span>
+        <div>
+          <h1 class="text-3xl font-bold">{tipologiaData.nom}</h1>
+          <p class="text-gray-600 mt-1">{tipologiaData.descripcio}</p>
+        </div>
+      </div>
+
+      <p class="mt-4 text-gray-500">
+        {count || 0} activitats trobades
+      </p>
+    </header>
+
+    <!-- Activities -->
+    <section class="mb-12">
+      <ActivityList
+        activities={activities}
+        emptyMessage={`No hi ha activitats de ${tipologiaData.nom} en aquest moment.`}
+      />
+    </section>
+
+    <!-- Other categories -->
+    <section class="border-t pt-8">
+      <h2 class="text-xl font-bold mb-6">Altres categories</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {otherCategories.map((cat) => (
+          <a
+            href={`/categoria/${cat.codi}`}
+            class="flex items-center gap-3 p-4 rounded-lg border hover:border-green-500 transition-colors"
+          >
+            <span class="text-2xl">{cat.icona}</span>
+            <span class="font-medium">{cat.nom}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>

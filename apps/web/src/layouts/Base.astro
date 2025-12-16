@@ -1,0 +1,112 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Directori d'activitats per a infants i joves al Vallès Oriental" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | Agenda Viva VO</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <header class="bg-white border-b sticky top-0 z-50">
+      <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-green-700 flex items-center gap-2">
+          <span class="text-2xl">🌿</span>
+          Agenda Viva VO
+        </a>
+        <div class="hidden md:flex gap-6 text-sm">
+          <a href="/cerca" class="hover:text-green-600 transition-colors">Cerca</a>
+          <a href="/nd-friendly" class="hover:text-green-600 transition-colors">ND-Friendly</a>
+          <a href="/sobre" class="hover:text-green-600 transition-colors">Sobre</a>
+        </div>
+        <button
+          id="mobile-menu-btn"
+          class="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+          aria-label="Menu"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </nav>
+      <!-- Mobile menu -->
+      <div id="mobile-menu" class="hidden md:hidden border-t bg-white">
+        <div class="px-4 py-3 space-y-2">
+          <a href="/cerca" class="block py-2 hover:text-green-600">Cerca</a>
+          <a href="/nd-friendly" class="block py-2 hover:text-green-600">ND-Friendly</a>
+          <a href="/sobre" class="block py-2 hover:text-green-600">Sobre</a>
+          <a href="/proposa" class="block py-2 hover:text-green-600">Proposa activitat</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 py-8 mt-16">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="grid md:grid-cols-3 gap-8">
+          <div>
+            <h3 class="text-white font-semibold mb-3">Agenda Viva VO</h3>
+            <p class="text-sm">
+              Directori participatiu d'activitats per a infants i joves al Vallès Oriental,
+              amb classificació ND-readiness per a famílies neurodivergents.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold mb-3">Enllaços</h3>
+            <ul class="text-sm space-y-2">
+              <li><a href="/cerca" class="hover:text-white transition-colors">Cerca activitats</a></li>
+              <li><a href="/nd-friendly" class="hover:text-white transition-colors">ND-Friendly</a></li>
+              <li><a href="/que-es-nd" class="hover:text-white transition-colors">Què és ND?</a></li>
+              <li><a href="/proposa" class="hover:text-white transition-colors">Proposa activitat</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold mb-3">Contacte</h3>
+            <p class="text-sm">
+              <a href="mailto:hola@agendaviva.cat" class="hover:text-white transition-colors">
+                hola@agendaviva.cat
+              </a>
+            </p>
+            <p class="text-sm mt-4">
+              Un projecte de{' '}
+              <a
+                href="https://weirdwiredhumans.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="underline hover:text-white transition-colors"
+              >
+                Weird Wired Humans
+              </a>
+            </p>
+          </div>
+        </div>
+        <div class="mt-8 pt-8 border-t border-gray-700 text-center text-sm">
+          <p>Agenda Viva VO és un projecte comunitari de codi obert</p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      btn?.addEventListener('click', () => {
+        menu?.classList.toggle('hidden');
+      });
+    </script>
+  </body>
+</html>

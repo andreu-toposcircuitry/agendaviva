@@ -1,0 +1,77 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import ActivityList from '../components/ActivityList.astro';
+import Filters from '../components/Filters.svelte';
+import { getActivitats, getMunicipis } from '../lib/supabase';
+
+const url = Astro.url;
+const params = {
+  q: url.searchParams.get('q') || undefined,
+  municipi: url.searchParams.get('municipi') || undefined,
+  tipologia: url.searchParams.get('tipologia') || undefined,
+  ndMin: url.searchParams.get('nd_min') ? parseInt(url.searchParams.get('nd_min')!) : undefined,
+  edat: url.searchParams.get('edat') ? parseInt(url.searchParams.get('edat')!) : undefined,
+};
+
+const { data: activities, count } = await getActivitats({ ...params, limit: 20 });
+const { data: municipis } = await getMunicipis();
+---
+
+<Base title="Cerca">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Search header -->
+    <div class="mb-8">
+      <form method="get" class="mb-4">
+        <div class="flex gap-2">
+          <input
+            type="search"
+            name="q"
+            value={params.q || ''}
+            placeholder="Cerca activitats..."
+            class="input flex-1"
+          />
+          <button type="submit" class="btn btn-primary">
+            Cercar
+          </button>
+        </div>
+      </form>
+
+      <h1 class="text-2xl font-bold">
+        {count || 0} activitats trobades
+        {params.q && (
+          <span class="font-normal text-gray-500">per "{params.q}"</span>
+        )}
+      </h1>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-8">
+      <!-- Filters sidebar -->
+      <aside class="md:col-span-1">
+        <Filters
+          client:load
+          municipis={municipis || []}
+          currentParams={params}
+        />
+      </aside>
+
+      <!-- Results -->
+      <div class="md:col-span-3">
+        <ActivityList
+          activities={activities}
+          emptyMessage="No s'han trobat activitats amb aquests filtres."
+        />
+
+        {/* Pagination placeholder */}
+        {activities && activities.length >= 20 && (
+          <div class="mt-8 text-center">
+            <p class="text-gray-500 text-sm">
+              Mostrant les primeres {activities.length} activitats
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Base>

@@ -1,0 +1,87 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import ActivityList from '../../components/ActivityList.astro';
+import { getActivitatsByMunicipi } from '../../lib/supabase';
+import { MUNICIPIS, type MunicipiId, type Municipi } from '@agendaviva/shared';
+
+const { id } = Astro.params;
+
+// Validate municipi
+if (!id || !(id in MUNICIPIS)) {
+  return Astro.redirect('/404');
+}
+
+const municipi = MUNICIPIS[id as MunicipiId];
+const { data: activities, count } = await getActivitatsByMunicipi(id, 50);
+
+// Get nearby municipalities (by population, as a simple heuristic)
+const allMunicipis = Object.values(MUNICIPIS) as Municipi[];
+const nearbyMunicipis = allMunicipis
+  .filter((m: Municipi) => m.id !== id)
+  .sort((a: Municipi, b: Municipi) => (b.poblacio || 0) - (a.poblacio || 0))
+  .slice(0, 6);
+---
+
+<Base title={municipi.nom} description={`Activitats per a infants i joves a ${municipi.nom}`}>
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <nav class="text-sm text-gray-500 mb-4">
+        <a href="/" class="hover:text-green-600">Inici</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Municipis</span>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">{municipi.nom}</span>
+      </nav>
+
+      <h1 class="text-3xl font-bold">{municipi.nom}</h1>
+      <p class="text-gray-600 mt-2">
+        Activitats per a infants i joves a {municipi.nom}
+      </p>
+
+      <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-500">
+        <span>Comarca: Valles Oriental</span>
+        {municipi.poblacio && (
+          <span>Poblacio: {municipi.poblacio.toLocaleString('ca-ES')} habitants</span>
+        )}
+        {municipi.codisPostals && municipi.codisPostals.length > 0 && (
+          <span>CP: {municipi.codisPostals.join(', ')}</span>
+        )}
+      </div>
+
+      <p class="mt-4 text-gray-500">
+        {count || 0} activitats trobades
+      </p>
+    </header>
+
+    <!-- Activities -->
+    <section class="mb-12">
+      <ActivityList
+        activities={activities}
+        emptyMessage={`No hi ha activitats a ${municipi.nom} en aquest moment.`}
+      />
+    </section>
+
+    <!-- Other municipalities -->
+    <section class="border-t pt-8">
+      <h2 class="text-xl font-bold mb-6">Altres municipis</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {nearbyMunicipis.map((m) => (
+          <a
+            href={`/municipi/${m.id}`}
+            class="p-4 rounded-lg border hover:border-green-500 transition-colors"
+          >
+            <span class="font-medium">{m.nom}</span>
+            {m.poblacio && (
+              <span class="text-sm text-gray-500 ml-2">
+                ({m.poblacio.toLocaleString('ca-ES')})
+              </span>
+            )}
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>
