@@ -18,4 +18,4 @@ export {
 export { SYSTEM_PROMPT, buildClassificationPrompt, type ClassificationHints } from './prompt.js';
 
 // Client utilities
-export { complete, getAnthropicClient, resetClient, type CompletionOptions, type CompletionResult } from './client.js';
+export { complete, getOpenAIClient, resetClient, type CompletionOptions, type CompletionResult } from './client.js';

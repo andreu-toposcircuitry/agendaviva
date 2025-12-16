@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.0",
+    "openai": "^4.70.0",
     "@agendaviva/shared": "workspace:*",
     "zod": "^3.22.0"
   },

@@ -1,14 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-let client: Anthropic | null = null;
+let client: OpenAI | null = null;
 
-export function getAnthropicClient(): Anthropic {
+export function getOpenAIClient(): OpenAI {
   if (!client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+      throw new Error('OPENAI_API_KEY environment variable is not set');
     }
-    client = new Anthropic({ apiKey });
+    client = new OpenAI({ apiKey });
   }
   return client;
 }
@@ -32,31 +32,33 @@ export async function complete(
   options: CompletionOptions = {}
 ): Promise<CompletionResult> {
   const {
-    model = 'claude-3-haiku-20240307',
+    model = 'gpt-4o-mini',
     maxTokens = 4096,
     temperature = 0.3,
   } = options;
 
-  const anthropic = getAnthropicClient();
+  const openai = getOpenAIClient();
 
-  const response = await anthropic.messages.create({
+  const response = await openai.chat.completions.create({
     model,
     max_tokens: maxTokens,
     temperature,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
   });
 
-  const textContent = response.content.find((c) => c.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text content in response');
+  const choice = response.choices[0];
+  if (!choice || !choice.message.content) {
+    throw new Error('No content in response');
   }
 
   return {
-    text: textContent.text,
+    text: choice.message.content,
     model: response.model,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
+    inputTokens: response.usage?.prompt_tokens ?? 0,
+    outputTokens: response.usage?.completion_tokens ?? 0,
   };
 }
 
