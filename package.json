@@ -1,5 +1,5 @@
 {
-  "name": "agendaviva-monorepo",
+  "name": "agendaviva-root",
   "private": true,
   "scripts": {
     "build": "turbo run build",
