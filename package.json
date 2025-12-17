@@ -1,39 +1,29 @@
 {
-  "name": "agendaviva-vo",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Directori participatiu d'activitats per a infants i joves al Vallès Oriental",
-  "keywords": ["vallès-oriental", "activitats", "neurodiversitat", "catalunya"],
-  "homepage": "https://agendaviva.cat",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/andreu-toposcircuitry/agendaviva.git"
-  },
-  "license": "MIT",
-  "author": "Weird Wired Humans <hola@weirdwiredhumans.com>",
+  "name": "@agendaviva/admin",
   "type": "module",
+  "version": "0.1.0",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "test": "turbo test",
-    "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,svelte,astro,json,md}\"",
-    "clean": "turbo clean && rm -rf node_modules",
-    "scrape": "pnpm --filter @agendaviva/scraper run scrape",
-    "db:migrate": "supabase db push",
-    "db:seed": "supabase db seed"
+    "dev": "vite dev",
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@agendaviva/shared": "workspace:*",
+    "@supabase/auth-ui-shared": "^0.1.8",
+    "@supabase/auth-ui-svelte": "^0.2.9",
+    "@supabase/supabase-js": "^2.39.0",
+    "svelte": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "prettier": "^3.1.0",
-    "prettier-plugin-astro": "^0.12.0",
-    "prettier-plugin-svelte": "^3.1.0",
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.0"
-  },
-  "packageManager": "pnpm@8.15.0",
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=8.0.0"
+    "@sveltejs/adapter-cloudflare": "^4.1.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "@sveltejs/kit": "^2.0.0",
+    "autoprefixer": "^10.4.17",
+    "tailwindcss": "^3.4.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "svelte-check": "^3.6.0"
   }
 }

@@ -1,0 +1,22 @@
+# pack-refs with: peeled fully-peeled sorted 
+f372468193ed2044204f86ad1a2502729bc48c76 refs/heads/codex/fix-svelte-config-import-for-sveltekit
+148ed12cd07bae1945b8c5e8c823aa2aedbbfcff refs/heads/main
+c66b5d7484998be9e63a234a2de9dedc0b9987d1 refs/pull/1/head
+522ac79244a1d378999b8f00f43caa7cc6f018d4 refs/pull/10/head
+d094a8b94c341b92660b5e238f92100af127dea8 refs/pull/11/head
+71a1091f72b3d415eb3f0efe2e1b3602edbddca0 refs/pull/12/head
+3a90ce68942b510cb9423e7767c0e4565932aac0 refs/pull/13/head
+94ef553d4acfedb173ba15ae05b9b4a05bc093c8 refs/pull/14/head
+e4c764556a8bd31a7b92fe48909c8e870f02eacb refs/pull/15/head
+14330bf840b157d740bfdc39fcaa65f88410aa30 refs/pull/16/head
+f372468193ed2044204f86ad1a2502729bc48c76 refs/pull/17/head
+5022a68d8473a2680a2b3bfe17affc523554bd62 refs/pull/17/merge
+e4467ef89941e10f1487b972c949d46c3dbf273c refs/pull/18/head
+260549bb7ce82940884a935e75dc296158fb8f84 refs/pull/2/head
+7fd63403d54b3f846c94ae6061cf9717829884e6 refs/pull/3/head
+94fb7c4e31b44f081b9acc1f215274f317d6c5df refs/pull/4/head
+809e0f57643ca0030c6336f90a05e3c66cbd1b2c refs/pull/5/head
+4a138bec1f4ed54bb0abacf47650a47ff5dffcb4 refs/pull/6/head
+8d29cb6624cb4d5041b94370eeb0397c213e5bb8 refs/pull/7/head
+3260ac579821bde0dd96811898c0345ad44ceddb refs/pull/8/head
+88042c11fbdffde9289fc0758c6a168cfdc1e47f refs/pull/9/head
