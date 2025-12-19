@@ -27,7 +27,6 @@
     "vite": "^5.4.2"
   }
     "scripts": {
-    // ... other scripts
     "test": "echo 'No tests yet'"
 }
 
