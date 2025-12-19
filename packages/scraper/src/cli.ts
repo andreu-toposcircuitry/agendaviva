@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { scrapeAllSources, scrapeSource, scrapeSingleUrl } from './scraper.js';
 import { getSupabaseClient, getActiveSources } from './storage.js';
+import { runDiscovery } from './discovery.js';
 
 function printHelp() {
   console.log(`
@@ -60,10 +61,22 @@ async function main() {
   const verbose = args.includes('--verbose') || args.includes('-v');
   const showHelp = args.includes('--help') || args.includes('-h');
   const showList = args.includes('--list');
+  const runDiscoverMode = args.includes('discover');
 
   if (showHelp) {
     printHelp();
     process.exit(0);
+  }
+
+  // Handle discover command
+  if (runDiscoverMode) {
+    try {
+      await runDiscovery();
+      process.exit(0);
+    } catch (err) {
+      console.error('\nDiscovery error:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
   }
 
   // Parse options
