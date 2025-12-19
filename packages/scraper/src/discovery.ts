@@ -9,10 +9,23 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) 
   : null;
 
+// Constants
+const MAX_TITLE_LENGTH = 50;
+
 interface SearchResult {
   title: string;
   url: string;
   description: string;
+}
+
+interface BraveSearchResponse {
+  web?: {
+    results?: Array<{
+      title: string;
+      url: string;
+      description: string;
+    }>;
+  };
 }
 
 /**
@@ -42,10 +55,10 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
       return [];
     }
 
-    const data = await response.json();
+    const data: BraveSearchResponse = await response.json();
     const results = data.web?.results || [];
 
-    return results.map((r: any) => ({
+    return results.map((r) => ({
       title: r.title,
       url: r.url,
       description: r.description,
@@ -88,7 +101,7 @@ export async function runDiscovery() {
           const { error } = await supabase
             .from('fonts_scraping')
             .insert({
-              nom: `[DISCOVERED] ${result.title.substring(0, 50)}`,
+              nom: `[DISCOVERED] ${result.title.substring(0, MAX_TITLE_LENGTH)}`,
               url: result.url,
               tipus: 'web',
               activa: false, // <--- Human review required!

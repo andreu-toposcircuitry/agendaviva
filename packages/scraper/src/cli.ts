@@ -14,6 +14,7 @@ Usage:
   pnpm scrape <source-id>        Scrape a specific source by ID
   pnpm scrape --url <url>        Scrape a single URL (for testing)
   pnpm scrape --list             List all active sources
+  pnpm discover                  Discover new event sources via web search
 
 Options:
   --dry-run, -d    Don't save to database
@@ -26,6 +27,7 @@ Environment:
   SUPABASE_URL         Supabase project URL
   SUPABASE_SERVICE_KEY Supabase service role key
   ANTHROPIC_API_KEY    Anthropic API key for classification
+  BRAVE_API_KEY        Brave Search API key for discovery
 `);
 }
 
