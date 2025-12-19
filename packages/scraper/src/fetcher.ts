@@ -7,6 +7,7 @@ export interface FetchOptions {
 }
 
 // We pretend to be a real browser (Chrome on Mac) to avoid being blocked
+// This is the "Secret Sauce" to scraping sites that block bots
 const BROWSER_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 /**
@@ -39,7 +40,7 @@ export async function fetchHtml(url: string, options: FetchOptions = {}): Promis
         });
 
         if (!res.ok) {
-          // If we get a 403/401, retrying usually won't help, so we abort retries to save time
+          // Smart Retries: Don't retry if the door is locked (403) or missing (404)
           if (res.status === 403 || res.status === 401) {
             throw new pRetry.AbortError(`Blocked by server (HTTP ${res.status}): ${res.statusText}`);
           }
@@ -54,8 +55,8 @@ export async function fetchHtml(url: string, options: FetchOptions = {}): Promis
       },
       {
         retries,
-        minTimeout: 1000, // Wait 1s before first retry
-        factor: 2,        // Exponential backoff (1s, 2s, 4s)
+        minTimeout: 2000, // Wait 2s before first retry (be polite)
+        factor: 2,        // Exponential backoff (2s, 4s, 8s)
         onFailedAttempt: (error) => {
           console.log(`[Fetcher] Attempt ${error.attemptNumber} failed for ${url}: ${error.message}`);
         },
