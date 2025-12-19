@@ -1,13 +1,20 @@
 import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
 import svelte from '@astrojs/svelte';
 import tailwind from '@astrojs/tailwind';
-import node from '@astrojs/node';
+import path from 'path';
 
 export default defineConfig({
   integrations: [svelte(), tailwind()],
-  output: 'hybrid',
-  site: 'https://agendaviva.cat',
+  output: 'server',
   adapter: node({
-    mode: 'standalone',
+    mode: 'standalone'
   }),
+  vite: {
+    resolve: {
+      alias: {
+        '@agendaviva/shared': path.resolve('../../packages/shared/src/index.ts')
+      }
+    }
+  }
 });
