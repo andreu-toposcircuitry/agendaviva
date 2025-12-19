@@ -18,7 +18,11 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install
-      - run: pnpm --filter @agendaviva/scraper scrape  # <--- UPDATED THIS LINE
+      
+      # 👇 THIS NEW STEP FIXES THE ERROR
+      - run: pnpm exec turbo run build --filter=@agendaviva/scraper...
+
+      - run: pnpm --filter @agendaviva/scraper scrape
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
