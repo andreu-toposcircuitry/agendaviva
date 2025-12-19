@@ -18,8 +18,8 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install
-      - run: pnpm scrape
+      - run: pnpm --filter @agendaviva/scraper scrape  # <--- UPDATED THIS LINE
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # <--- FIXED THIS LINE
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
