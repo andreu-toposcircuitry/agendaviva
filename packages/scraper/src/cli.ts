@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { scrapeAllSources, scrapeSource, scrapeSingleUrl } from './scraper.js';
 import { getSupabaseClient, getActiveSources } from './storage.js';
+import { runDiscovery } from './discovery.js';
 
 function printHelp() {
   console.log(`
@@ -13,6 +14,7 @@ Usage:
   pnpm scrape <source-id>        Scrape a specific source by ID
   pnpm scrape --url <url>        Scrape a single URL (for testing)
   pnpm scrape --list             List all active sources
+  pnpm discover                  Discover new event sources via web search
 
 Options:
   --dry-run, -d    Don't save to database
@@ -25,6 +27,7 @@ Environment:
   SUPABASE_URL         Supabase project URL
   SUPABASE_SERVICE_KEY Supabase service role key
   ANTHROPIC_API_KEY    Anthropic API key for classification
+  BRAVE_API_KEY        Brave Search API key for discovery
 `);
 }
 
@@ -60,10 +63,22 @@ async function main() {
   const verbose = args.includes('--verbose') || args.includes('-v');
   const showHelp = args.includes('--help') || args.includes('-h');
   const showList = args.includes('--list');
+  const runDiscoverMode = args.includes('discover');
 
   if (showHelp) {
     printHelp();
     process.exit(0);
+  }
+
+  // Handle discover command
+  if (runDiscoverMode) {
+    try {
+      await runDiscovery();
+      process.exit(0);
+    } catch (err) {
+      console.error('\nDiscovery error:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
   }
 
   // Parse options

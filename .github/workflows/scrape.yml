@@ -19,10 +19,17 @@ jobs:
           cache: pnpm
       - run: pnpm install
       
-      # Build dependencies first
+      # Build dependencies
       - run: pnpm exec turbo run build --filter=@agendaviva/scraper...
 
-      # Run the scraper with ALL necessary keys
+      # 1. Run Discovery (Find new sources)
+      - run: pnpm --filter @agendaviva/scraper discover
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+
+      # 2. Run Scraper (Process active sources)
       - run: pnpm --filter @agendaviva/scraper scrape
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
