@@ -19,9 +19,10 @@ jobs:
           cache: pnpm
       - run: pnpm install
       
-      # 👇 THIS NEW STEP FIXES THE ERROR
+      # Build dependencies first
       - run: pnpm exec turbo run build --filter=@agendaviva/scraper...
 
+      # Run the scraper with ALL necessary keys
       - run: pnpm --filter @agendaviva/scraper scrape
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
