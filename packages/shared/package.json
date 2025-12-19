@@ -30,7 +30,7 @@
   "scripts": {
     "build": "tsup src/index.ts src/types/index.ts src/constants/index.ts src/validators/index.ts src/utils/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts src/types/index.ts src/constants/index.ts src/validators/index.ts src/utils/index.ts --format esm --dts --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
