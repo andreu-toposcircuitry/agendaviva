@@ -78,18 +78,78 @@ export async function runDiscovery() {
     return;
   }
 
-  // 0. WIPE OLD DATA - Delete all existing scraping sources (many were hallucinated)
-  console.log('🗑️  Deleting old scraping sources...');
-  const { error: deleteError } = await supabase
+  // 0. Clean up old/stale scraping sources
+  console.log('🧹 Cleaning up stale scraping sources...');
+  
+  // Delete sources not updated in 2 years
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+  
+  const { data: staleSources, error: staleError } = await supabase
     .from('fonts_scraping')
     .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+    .lt('updated_at', twoYearsAgo.toISOString())
+    .select('id, nom');
   
-  if (deleteError) {
-    console.error('Error deleting old sources:', deleteError.message);
-  } else {
-    console.log('✅ Old sources deleted successfully. Starting fresh discovery...\n');
+  if (staleError) {
+    console.error('Error deleting stale sources:', staleError.message);
+  } else if (staleSources && staleSources.length > 0) {
+    console.log(`✅ Deleted ${staleSources.length} sources not updated in 2 years.`);
   }
+
+  // Delete sources where ALL activities have ended
+  // First, get all scraping sources
+  const { data: allSources, error: sourcesError } = await supabase
+    .from('fonts_scraping')
+    .select('id, url, nom');
+
+  if (sourcesError) {
+    console.error('Error fetching sources:', sourcesError.message);
+  } else if (allSources) {
+    const sourcesToDelete: string[] = [];
+    
+    for (const source of allSources) {
+      // Check if this source has any ongoing or unspecified activities
+      const { data: activities, error: actError } = await supabase
+        .from('activitats')
+        .select('data_fi')
+        .eq('font_url', source.url);
+      
+      if (actError) {
+        console.error(`Error checking activities for ${source.nom}:`, actError.message);
+        continue;
+      }
+      
+      if (activities && activities.length > 0) {
+        // Check if ALL activities have ended
+        const now = new Date();
+        const hasOngoingOrUnspecified = activities.some(
+          (act) => !act.data_fi || new Date(act.data_fi) >= now
+        );
+        
+        if (!hasOngoingOrUnspecified) {
+          // All activities have ended, mark for deletion
+          sourcesToDelete.push(source.id);
+        }
+      }
+      // If no activities found, keep the source (it might be new or just not scraped yet)
+    }
+    
+    if (sourcesToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('fonts_scraping')
+        .delete()
+        .in('id', sourcesToDelete);
+      
+      if (deleteError) {
+        console.error('Error deleting sources with expired activities:', deleteError.message);
+      } else {
+        console.log(`✅ Deleted ${sourcesToDelete.length} sources with all activities expired.`);
+      }
+    }
+  }
+  
+  console.log('');
 
   // 1. Use the full list of municipalities from the shared package
   const municipios = Object.values(MUNICIPIS) as Array<{ id: string; nom: string; codisPostals: string[]; poblacio: number }>;
