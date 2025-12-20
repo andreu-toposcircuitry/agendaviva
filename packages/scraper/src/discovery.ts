@@ -98,53 +98,66 @@ export async function runDiscovery() {
   }
 
   // Delete sources where ALL activities have ended
-  // First, get all scraping sources
+  // Fetch all sources and their activities in optimized queries
   const { data: allSources, error: sourcesError } = await supabase
     .from('fonts_scraping')
     .select('id, url, nom');
 
   if (sourcesError) {
     console.error('Error fetching sources:', sourcesError.message);
-  } else if (allSources) {
-    const sourcesToDelete: string[] = [];
+  } else if (allSources && allSources.length > 0) {
+    // Fetch all activities with their font_url and data_fi in a single query
+    const { data: allActivities, error: actError } = await supabase
+      .from('activitats')
+      .select('font_url, data_fi')
+      .in('font_url', allSources.map(s => s.url));
     
-    for (const source of allSources) {
-      // Check if this source has any ongoing or unspecified activities
-      const { data: activities, error: actError } = await supabase
-        .from('activitats')
-        .select('data_fi')
-        .eq('font_url', source.url);
-      
-      if (actError) {
-        console.error(`Error checking activities for ${source.nom}:`, actError.message);
-        continue;
-      }
-      
-      if (activities && activities.length > 0) {
-        // Check if ALL activities have ended
-        const now = new Date();
-        const hasOngoingOrUnspecified = activities.some(
-          (act) => !act.data_fi || new Date(act.data_fi) >= now
-        );
-        
-        if (!hasOngoingOrUnspecified) {
-          // All activities have ended, mark for deletion
-          sourcesToDelete.push(source.id);
+    if (actError) {
+      console.error('Error fetching activities:', actError.message);
+    } else {
+      // Group activities by font_url
+      const activitiesBySource = new Map<string, Array<{ data_fi: string | null }>>();
+      if (allActivities) {
+        for (const activity of allActivities) {
+          if (!activitiesBySource.has(activity.font_url)) {
+            activitiesBySource.set(activity.font_url, []);
+          }
+          activitiesBySource.get(activity.font_url)!.push({ data_fi: activity.data_fi });
         }
       }
-      // If no activities found, keep the source (it might be new or just not scraped yet)
-    }
-    
-    if (sourcesToDelete.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('fonts_scraping')
-        .delete()
-        .in('id', sourcesToDelete);
       
-      if (deleteError) {
-        console.error('Error deleting sources with expired activities:', deleteError.message);
-      } else {
-        console.log(`✅ Deleted ${sourcesToDelete.length} sources with all activities expired.`);
+      const sourcesToDelete: string[] = [];
+      const now = new Date();
+      
+      for (const source of allSources) {
+        const activities = activitiesBySource.get(source.url);
+        
+        if (activities && activities.length > 0) {
+          // Check if ALL activities have ended
+          // Note: Using >= because activities ending today are still considered ongoing
+          const hasOngoingOrUnspecified = activities.some(
+            (act) => !act.data_fi || new Date(act.data_fi) >= now
+          );
+          
+          if (!hasOngoingOrUnspecified) {
+            // All activities have ended, mark for deletion
+            sourcesToDelete.push(source.id);
+          }
+        }
+        // If no activities found, keep the source (it might be new or just not scraped yet)
+      }
+      
+      if (sourcesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('fonts_scraping')
+          .delete()
+          .in('id', sourcesToDelete);
+        
+        if (deleteError) {
+          console.error('Error deleting sources with expired activities:', deleteError.message);
+        } else {
+          console.log(`✅ Deleted ${sourcesToDelete.length} sources with all activities expired.`);
+        }
       }
     }
   }
