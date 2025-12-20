@@ -36,18 +36,19 @@ export const agentNDResultSchema = z.object({
 /**
  * Agent activity result schema
  * FIXED: Changed .optional() to .nullish() to accept 'null' from AI
+ * Increased max age to 100 to support adult activities
  */
 export const agentActivitatResultSchema = z.object({
   nom: z.string(),
   descripcio: z.string().nullish(),
   tipologies: z.array(agentTipologiaResultSchema),
-  quanEsFa: z.enum(QUAN_ES_FA_CODIS as [string, ...string[]]),
+  quanEsFa: z.enum(QUAN_ES_FA_CODIS as [string, ...string[]]).nullish(),
   municipiId: z.string().nullish(),
   barriZona: z.string().nullish(),
   espai: z.string().nullish(),
   adreca: z.string().nullish(),
-  edatMin: z.number().int().min(0).max(25).nullish(),
-  edatMax: z.number().int().min(0).max(25).nullish(),
+  edatMin: z.number().int().min(0).max(100).nullish(),
+  edatMax: z.number().int().min(0).max(100).nullish(),
   edatText: z.string().nullish(),
   dies: z.string().nullish(),
   horari: z.string().nullish(),
@@ -60,13 +61,14 @@ export const agentActivitatResultSchema = z.object({
 
 /**
  * Complete agent output schema
+ * Make ND nullable in case the agent fails to generate it
  */
 export const agentOutputSchema = z.object({
   confianca: z.number().min(0).max(100),
   needsReview: z.boolean(),
   reviewReasons: z.array(z.string()),
   activitat: agentActivitatResultSchema,
-  nd: agentNDResultSchema,
+  nd: agentNDResultSchema.nullish(),
   modelUsed: z.string(),
   processingTimeMs: z.number(),
   rawResponse: z.unknown().optional(),

@@ -97,7 +97,7 @@ export async function saveActivityFromAgent(
           justificacio: t.justificacio,
         })),
         tipologia_principal: activitat.tipologies[0]?.codi,
-        quan_es_fa: activitat.quanEsFa,
+        quan_es_fa: activitat.quanEsFa || 'puntual', // Fallback if null
         edat_min: activitat.edatMin,
         edat_max: activitat.edatMax,
         edat_text: activitat.edatText,
@@ -113,14 +113,14 @@ export async function saveActivityFromAgent(
         telefon: activitat.telefon,
         web: activitat.web,
         tags: activitat.tags || [],
-        // ND fields
-        nd_score: nd.score,
-        nd_nivell: nd.nivell,
-        nd_justificacio: nd.justificacio,
-        nd_indicadors_positius: nd.indicadorsPositius,
-        nd_indicadors_negatius: nd.indicadorsNegatius,
-        nd_recomanacions: nd.recomanacions,
-        nd_confianca: nd.confianca,
+        // ND fields with fallbacks
+        nd_score: nd?.score || 1,
+        nd_nivell: nd?.nivell,
+        nd_justificacio: nd?.justificacio,
+        nd_indicadors_positius: nd?.indicadorsPositius || [],
+        nd_indicadors_negatius: nd?.indicadorsNegatius || [],
+        nd_recomanacions: nd?.recomanacions || [],
+        nd_confianca: nd?.confianca || 0,
         nd_verificat_per: 'inferit',
         // Status
         estat: needsReview ? 'pendent' : 'publicada',
@@ -162,10 +162,12 @@ export async function saveActivityFromAgent(
       activitatId: newActivitat?.id,
       cuaId,
     };
-  } catch (error) {
+  } catch (error: any) {
+    // FIX: Properly handle Supabase error objects
+    const msg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: msg,
     };
   }
 }
@@ -246,15 +248,19 @@ export async function logScrapingRun(
 ): Promise<void> {
   const sb = getSupabaseClient();
 
-  await sb
-    .from('scraping_logs')
-    .insert({
-      source_id: sourceId,
-      blocks_found: result.blocksFound,
-      activities_created: result.activitiesCreated,
-      activities_queued: result.activitiesQueued,
-      errors: result.errors,
-      duration_ms: result.durationMs,
-      created_at: new Date().toISOString(),
-    });
+  try {
+    await sb
+      .from('scraping_logs')
+      .insert({
+        source_id: sourceId,
+        blocks_found: result.blocksFound,
+        activities_created: result.activitiesCreated,
+        activities_queued: result.activitiesQueued,
+        errors: result.errors,
+        duration_ms: result.durationMs,
+        created_at: new Date().toISOString(),
+      });
+  } catch {
+    // Ignore logging errors if table missing or other issues
+  }
 }
