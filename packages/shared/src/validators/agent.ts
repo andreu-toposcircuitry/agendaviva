@@ -35,26 +35,27 @@ export const agentNDResultSchema = z.object({
 
 /**
  * Agent activity result schema
+ * FIXED: Changed .optional() to .nullish() to accept 'null' from AI
  */
 export const agentActivitatResultSchema = z.object({
   nom: z.string(),
-  descripcio: z.string().optional(),
+  descripcio: z.string().nullish(),
   tipologies: z.array(agentTipologiaResultSchema),
   quanEsFa: z.enum(QUAN_ES_FA_CODIS as [string, ...string[]]),
-  municipiId: z.string().optional(),
-  barriZona: z.string().optional(),
-  espai: z.string().optional(),
-  adreca: z.string().optional(),
-  edatMin: z.number().int().min(0).max(25).optional(),
-  edatMax: z.number().int().min(0).max(25).optional(),
-  edatText: z.string().optional(),
-  dies: z.string().optional(),
-  horari: z.string().optional(),
-  preu: z.string().optional(),
-  email: z.string().email().optional(),
-  telefon: z.string().optional(),
-  web: z.string().url().optional(),
-  tags: z.array(z.string()).optional(),
+  municipiId: z.string().nullish(),
+  barriZona: z.string().nullish(),
+  espai: z.string().nullish(),
+  adreca: z.string().nullish(),
+  edatMin: z.number().int().min(0).max(25).nullish(),
+  edatMax: z.number().int().min(0).max(25).nullish(),
+  edatText: z.string().nullish(),
+  dies: z.string().nullish(),
+  horari: z.string().nullish(),
+  preu: z.string().nullish(),
+  email: z.string().email().nullish().or(z.literal('')), // Allow empty string too
+  telefon: z.string().nullish(),
+  web: z.string().url().nullish().or(z.literal('')),
+  tags: z.array(z.string()).nullish(),
 });
 
 /**
