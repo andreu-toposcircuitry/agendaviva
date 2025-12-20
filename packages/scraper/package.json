@@ -15,8 +15,8 @@
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
     "scrape": "tsx src/cli.ts",
-    "scrape:dry": "tsx src/cli.ts --dry-run",
     "discover": "tsx src/cli.ts discover",
+    "scrape:dry": "tsx src/cli.ts --dry-run",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
@@ -26,7 +26,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "cheerio": "^1.0.0-rc.12",
     "p-limit": "^5.0.0",
-    "p-retry": "^6.2.0"
+    "p-retry": "^6.2.0",
+    "undici": "^6.19.0"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
