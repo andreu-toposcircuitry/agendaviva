@@ -8,6 +8,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 // Configuration constants
 const STALE_SOURCE_THRESHOLD_YEARS = 2; // Delete sources not updated in this many years
 const RATE_LIMIT_DELAY_MS = 800; // Delay between API calls to be polite
+const TITLE_LENGTH_DB = 50; // Max title length for database storage
+const TITLE_LENGTH_LOG = 40; // Max title length for log display
 
 // Initialize Supabase (if keys are present)
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY) 
@@ -142,7 +144,9 @@ export async function runDiscovery() {
         
         if (activities && activities.length > 0) {
           // Check if ALL activities have ended
-          // Note: Using >= because activities ending today are still considered ongoing
+          // Note: Using >= because we compare dates at midnight UTC. An activity with
+          // data_fi of "2025-01-20" is considered ongoing on "2025-01-20" throughout the day.
+          // Only activities with data_fi < today are considered fully expired.
           const hasOngoingOrUnspecified = activities.some(
             (act) => !act.data_fi || new Date(act.data_fi) >= now
           );
@@ -222,7 +226,7 @@ export async function runDiscovery() {
           const { error } = await supabase
             .from('fonts_scraping')
             .insert({
-              nom: `[${muni.nom}] ${result.title.substring(0, 50)}`,
+              nom: `[${muni.nom}] ${result.title.substring(0, TITLE_LENGTH_DB)}`,
               url: result.url,
               tipus: 'web',
               activa: true, // <--- FIXED: Now defaults to TRUE so scraper sees it
@@ -231,7 +235,7 @@ export async function runDiscovery() {
             });
 
           if (!error) {
-            console.log(`   + Added: ${result.title.substring(0, 40)}...`);
+            console.log(`   + Added: ${result.title.substring(0, TITLE_LENGTH_LOG)}...`);
             totalAdded++;
           } else {
             console.error('Error saving source:', error.message);
@@ -247,7 +251,7 @@ export async function runDiscovery() {
             .eq('id', existing.id);
           
           if (!error) {
-            console.log(`   ^ Activated: ${result.title.substring(0, 40)}...`);
+            console.log(`   ^ Activated: ${result.title.substring(0, TITLE_LENGTH_LOG)}...`);
             totalActivated++;
           } else {
             console.error('Error activating source:', error.message);
