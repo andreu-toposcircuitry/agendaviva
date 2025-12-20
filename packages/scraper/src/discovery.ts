@@ -91,8 +91,11 @@ export async function runDiscovery() {
   // 0. Clean up old/stale scraping sources
   console.log('🧹 Cleaning up stale scraping sources...');
   
+  // Create timestamp once for consistent comparisons throughout cleanup
+  const now = new Date();
+  
   // Delete sources not updated in STALE_SOURCE_THRESHOLD_YEARS
-  const thresholdDate = new Date();
+  const thresholdDate = new Date(now);
   thresholdDate.setFullYear(thresholdDate.getFullYear() - STALE_SOURCE_THRESHOLD_YEARS);
   
   const { data: staleSources, error: staleError } = await supabase
@@ -137,7 +140,6 @@ export async function runDiscovery() {
       }
       
       const sourcesToDelete: string[] = [];
-      const now = new Date();
       
       for (const source of allSources) {
         const activities = activitiesBySource.get(source.url);
