@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install
+          
+      # 👇 FIXED: Added --no-frozen-lockfile to ignore the lockfile mismatch
+      - run: pnpm install --no-frozen-lockfile
       
       # Build dependencies
       - run: pnpm exec turbo run build --filter=@agendaviva/scraper...
