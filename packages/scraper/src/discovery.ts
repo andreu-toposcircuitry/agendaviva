@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { MUNICIPIS } from '@agendaviva/shared';
 
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -8,9 +9,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY) 
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) 
   : null;
-
-// Constants
-const MAX_TITLE_LENGTH = 50;
 
 interface SearchResult {
   title: string;
@@ -28,6 +26,9 @@ interface BraveSearchResponse {
   };
 }
 
+// Helper: Sleep to avoid hitting API rate limits
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * Search the web for events using Brave Search API
  */
@@ -37,11 +38,9 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
     return [];
   }
 
-  console.log(`🔍 Searching the web for: "${query}"...`);
-
   try {
     const response = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10&country=ES&search_lang=ca`,
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&country=ES&search_lang=ca`,
       {
         headers: {
           'Accept': 'application/json',
@@ -71,6 +70,7 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
 
 /**
  * Run a discovery cycle and SAVE to Supabase
+ * This searches ALL municipalities in Vallès Oriental for children's activities
  */
 export async function runDiscovery() {
   if (!supabase) {
@@ -78,18 +78,53 @@ export async function runDiscovery() {
     return;
   }
 
-  const municipalities = ['Granollers', 'Cardedeu', 'Mollet del Vallès', 'La Garriga'];
-  const keywords = ['agenda cultural', 'concerts avui', 'activitats familiars'];
+  // 0. WIPE OLD DATA - Delete all existing scraping sources (many were hallucinated)
+  console.log('🗑️  Deleting old scraping sources...');
+  const { error: deleteError } = await supabase
+    .from('fonts_scraping')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+  
+  if (deleteError) {
+    console.error('Error deleting old sources:', deleteError.message);
+  } else {
+    console.log('✅ Old sources deleted successfully. Starting fresh discovery...\n');
+  }
 
-  let newSourcesCount = 0;
+  // 1. Use the full list of municipalities from the shared package
+  const municipios = Object.values(MUNICIPIS) as Array<{ id: string; nom: string; codisPostals: string[]; poblacio: number }>;
+  
+  // 2. Specific keywords for children's activities
+  const keywords = [
+    'activitats extraescolars',
+    'agenda infantil',
+    'casals estiu',
+    'tallers per a nens',
+    'escola de música',
+    'club esportiu'
+  ];
 
-  for (const city of municipalities) {
+  console.log(`🚀 Starting Massive Discovery for ${municipios.length} municipalities...`);
+  
+  let totalAdded = 0;
+
+  for (const muni of municipios) {
+    console.log(`\n📍 Checking ${muni.nom}...`);
+    
     for (const keyword of keywords) {
-      const query = `${keyword} ${city}`;
+      const query = `${keyword} ${muni.nom}`;
+      
+      // Be polite to the API
+      await sleep(500);
+
       const results = await searchWebForEvents(query);
       
       for (const result of results) {
-        // Check if we already have this URL (to avoid duplicates)
+        // Skip generic domains like wikipedia, facebook login, etc.
+        if (result.url.includes('wikipedia.org') || result.url.includes('facebook.com/login')) {
+          continue;
+        }
+
         const { data: existing } = await supabase
           .from('fonts_scraping')
           .select('id')
@@ -97,21 +132,21 @@ export async function runDiscovery() {
           .single();
 
         if (!existing) {
-          // Insert as INACTIVE so a human can review it first
+          // Insert as INACTIVE for review
           const { error } = await supabase
             .from('fonts_scraping')
             .insert({
-              nom: `[DISCOVERED] ${result.title.substring(0, MAX_TITLE_LENGTH)}`,
+              nom: `[${muni.nom}] ${result.title.substring(0, 40)}`,
               url: result.url,
               tipus: 'web',
-              activa: false, // <--- Human review required!
-              notes: `Found via Brave searching for "${query}"\n${result.description}`,
-              prioritat: 1
+              activa: false, // User must review to activate!
+              prioritat: 5,
+              notes: `Discovered searching for "${query}"\n${result.description}`
             });
 
           if (!error) {
-            console.log(`✅ Saved new source: ${result.title}`);
-            newSourcesCount++;
+            console.log(`   + Added: ${result.title.substring(0, 30)}...`);
+            totalAdded++;
           } else {
             console.error('Error saving source:', error.message);
           }
@@ -120,5 +155,5 @@ export async function runDiscovery() {
     }
   }
 
-  console.log(`\n✨ Discovery complete. Added ${newSourcesCount} new candidate sources.`);
+  console.log(`\n✨ Discovery Finished. Added ${totalAdded} new potential sources.`);
 }
