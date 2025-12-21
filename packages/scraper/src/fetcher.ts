@@ -1,61 +1,39 @@
 import pRetry, { AbortError } from 'p-retry';
-import { Agent, setGlobalDispatcher, getGlobalDispatcher } from 'undici';
+import { Agent, setGlobalDispatcher } from 'undici';
 
 export interface FetchOptions {
   timeout?: number;
   retries?: number;
   userAgent?: string;
-  allowInsecureSSL?: boolean; // Explicit opt-in per request
+  allowInsecureSSL?: boolean;
 }
 
-const BROWSER_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+// Mimic a standard Chrome browser on macOS to avoid being identified as a bot
+const BROWSER_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 
-// Cache for known-problematic domains that need insecure SSL
-const insecureDomainCache = new Set<string>();
-
-// Secure agent (default)
-const secureAgent = new Agent({
+// THE NUCLEAR AGENT CONFIGURATION
+// 1. connect.timeout: 60s (Fixes "operation aborted" on slow sites)
+// 2. family: 4 (Forces IPv4, fixes "fetch failed" on many Spanish servers)
+// 3. rejectUnauthorized: false (Ignores expired/bad SSL certificates)
+const globalAgent = new Agent({
   connect: {
-    timeout: 20000,
+    timeout: 60_000, 
+    family: 4,       
+    rejectUnauthorized: false, 
   },
+  headersTimeout: 60_000,
+  bodyTimeout: 60_000,
+  keepAliveTimeout: 10_000,
 });
 
-// Insecure agent (fallback for problematic sites)
-const insecureAgent = new Agent({
-  connect: {
-    rejectUnauthorized: false,
-    timeout: 20000,
-  },
-});
+setGlobalDispatcher(globalAgent);
 
-// Set secure agent as default
-setGlobalDispatcher(secureAgent);
-
-/**
- * Fetch HTML content from a URL with smart SSL fallback
- *
- * First attempts with secure SSL, falls back to insecure only on
- * certificate errors and caches the domain for future requests.
- */
 export async function fetchHtml(url: string, options: FetchOptions = {}): Promise<string> {
   const {
-    timeout = 20000,
+    timeout = 60000, // 60 seconds default
     retries = 3,
     userAgent = BROWSER_USER_AGENT,
-    allowInsecureSSL = true, // Allow fallback by default
   } = options;
-
-  const urlObj = new URL(url);
-  const domain = urlObj.hostname;
-
-  // Check if this domain is known to need insecure SSL
-  const useInsecure = insecureDomainCache.has(domain);
-
-  if (useInsecure) {
-    setGlobalDispatcher(insecureAgent);
-  } else {
-    setGlobalDispatcher(secureAgent);
-  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -67,57 +45,34 @@ export async function fetchHtml(url: string, options: FetchOptions = {}): Promis
           const res = await fetch(url, {
             headers: {
               'User-Agent': userAgent,
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
               'Accept-Language': 'ca,es;q=0.9,en;q=0.8',
               'Cache-Control': 'no-cache',
+              'Sec-Fetch-Dest': 'document',
+              'Sec-Fetch-Mode': 'navigate',
+              'Upgrade-Insecure-Requests': '1'
             },
             signal: controller.signal,
           });
 
           if (!res.ok) {
-            if (res.status === 403 || res.status === 401) {
-              throw new AbortError(`Blocked by server (HTTP ${res.status})`);
+            // Stop retrying for permanent dead links (404, 410)
+            if (res.status === 404 || res.status === 410) {
+              throw new AbortError(`Page gone (HTTP ${res.status})`);
             }
-            if (res.status === 404) {
-              throw new AbortError('Page not found (HTTP 404)');
+            // Stop retrying if strictly blocked (403) to save time
+            if (res.status === 403) {
+              throw new AbortError(`Access Forbidden (HTTP 403)`);
             }
             throw new Error(`HTTP ${res.status}: ${res.statusText}`);
           }
 
           return res;
         } catch (error: any) {
-          // Check if this is an SSL certificate error
-          const isSSLError =
-            error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-            error.code === 'CERT_HAS_EXPIRED' ||
-            error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
-            error.code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-            error.code === 'ERR_TLS_CERT_ALTNAME_INVALID' ||
-            error.message?.includes('certificate') ||
-            error.message?.includes('SSL');
-
-          if (isSSLError && allowInsecureSSL && !useInsecure) {
-            console.warn(`[Fetcher] SSL error for ${domain}, falling back to insecure mode`);
-            insecureDomainCache.add(domain);
-            setGlobalDispatcher(insecureAgent);
-
-            // Retry with insecure agent
-            const res = await fetch(url, {
-              headers: {
-                'User-Agent': userAgent,
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'ca,es;q=0.9,en;q=0.8',
-              },
-              signal: controller.signal,
-            });
-
-            if (!res.ok) {
-              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
-
-            return res;
+          // Escalating timeout errors so pRetry handles them correctly
+          if (error.name === 'AbortError') {
+             throw new AbortError(`Timeout after ${timeout}ms`);
           }
-
           throw error;
         }
       },
@@ -134,45 +89,17 @@ export async function fetchHtml(url: string, options: FetchOptions = {}): Promis
     return await response.text();
   } finally {
     clearTimeout(timeoutId);
-    // Reset to secure agent after request
-    setGlobalDispatcher(secureAgent);
   }
 }
 
-/**
- * Check if a URL is reachable
- */
 export async function checkUrl(url: string, options: FetchOptions = {}): Promise<boolean> {
   try {
-    const { timeout = 5000, userAgent = BROWSER_USER_AGENT } = options;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const res = await fetch(url, {
-        method: 'HEAD',
-        headers: { 'User-Agent': userAgent },
-        signal: controller.signal,
-      });
-      return res.ok;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const res = await fetch(url, { 
+      method: 'HEAD', 
+      headers: { 'User-Agent': BROWSER_USER_AGENT } 
+    });
+    return res.ok;
   } catch {
     return false;
   }
-}
-
-/**
- * Get list of domains currently using insecure SSL fallback
- */
-export function getInsecureDomains(): string[] {
-  return Array.from(insecureDomainCache);
-}
-
-/**
- * Clear the insecure domain cache
- */
-export function clearInsecureDomainCache(): void {
-  insecureDomainCache.clear();
 }

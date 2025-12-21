@@ -229,7 +229,7 @@ describe('classifyActivity', () => {
     expect(result.error).toContain('JSON parse error');
   });
 
-  it('should return error when validation fails', async () => {
+  it('should use fallback when validation fails but nom exists', async () => {
     const invalidResponse = {
       confianca: 'not a number', // Should be number
       needsReview: false,
@@ -264,8 +264,11 @@ describe('classifyActivity', () => {
 
     const result = await classifyActivity(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Validation error');
+    // With fallback logic, this should now succeed with low confidence
+    expect(result.success).toBe(true);
+    expect(result.output?.needsReview).toBe(true);
+    expect(result.output?.confianca).toBe(0);
+    expect(result.output?.reviewReasons).toContain('Validation failed, saved via fallback');
   });
 
   it('should handle API errors gracefully', async () => {

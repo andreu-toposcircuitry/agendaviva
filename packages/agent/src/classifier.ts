@@ -83,6 +83,33 @@ export async function classifyActivity(
     const validated = agentOutputSchema.safeParse(withMetadata);
 
     if (!validated.success) {
+      // FALLBACK STRATEGY: 
+      // If strict validation fails, try to construct a partial object 
+      // instead of failing completely.
+      console.warn(`[Agent] Strict validation failed: ${validated.error.message}. Attempting fallback.`);
+      
+      const raw = parsed as any;
+      if (raw.activitat && raw.activitat.nom) {
+         return {
+            success: true,
+            output: {
+               confianca: 0,
+               needsReview: true,
+               reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
+               activitat: {
+                  ...raw.activitat,
+                  tipologies: raw.activitat.tipologies || [],
+                  quanEsFa: raw.activitat.quanEsFa || 'puntual',
+                  tags: raw.activitat.tags || []
+               },
+               nd: raw.nd || { score: 1, nivell: 'nd_desafiador', justificacio: 'Fallback data', indicadorsPositius: [], indicadorsNegatius: [], recomanacions: [], confianca: 0 },
+               modelUsed: response.model,
+               processingTimeMs: Date.now() - startTime
+            },
+            rawResponse: response.text
+         };
+      }
+      
       return {
         success: false,
         error: `Validation error: ${validated.error.message}`,
