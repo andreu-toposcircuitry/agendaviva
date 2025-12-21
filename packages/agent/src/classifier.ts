@@ -26,6 +26,29 @@ export interface BatchOptions extends ClassificationOptions {
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_TEMPERATURE = 0.2;
 
+// Fallback constants for when validation fails
+const FALLBACK_ND_DEFAULTS = {
+  score: 1,
+  nivell: 'nd_desafiador',
+  justificacio: 'Fallback data - requires manual review',
+  indicadorsPositius: [],
+  indicadorsNegatius: [],
+  recomanacions: [],
+  confianca: 0,
+} as const;
+
+// Minimum expected structure for fallback validation
+interface MinimalFallbackData {
+  activitat?: {
+    nom?: string;
+    tipologies?: unknown[];
+    quanEsFa?: string;
+    tags?: unknown[];
+    [key: string]: unknown;
+  };
+  nd?: unknown;
+}
+
 /**
  * Classify an activity using OpenAI
  */
@@ -83,6 +106,42 @@ export async function classifyActivity(
     const validated = agentOutputSchema.safeParse(withMetadata);
 
     if (!validated.success) {
+      // FALLBACK STRATEGY: 
+      // If strict validation fails, try to construct a partial object 
+      // instead of failing completely. This allows us to save partially
+      // valid data that can be reviewed and corrected by humans later.
+      console.warn(`[Agent] Strict validation failed: ${validated.error.message}. Attempting fallback.`);
+      
+      const raw = parsed as MinimalFallbackData;
+      
+      // Only attempt fallback if we have the absolute minimum: activity name
+      // and at least some structure. More validation would defeat the purpose
+      // of the fallback mechanism, which is to save as much as possible.
+      if (raw.activitat?.nom && typeof raw.activitat.nom === 'string' && raw.activitat.nom.length > 0) {
+         return {
+            success: true,
+            output: {
+               confianca: 0,
+               needsReview: true,
+               reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
+               activitat: {
+                  ...raw.activitat,
+                  // NOTE: Using 'as any' here is intentional. We're in fallback mode
+                  // where the AI returned data that doesn't match our strict schema.
+                  // We accept the risk to save partial data for human review rather
+                  // than discarding potentially useful information.
+                  tipologies: (raw.activitat.tipologies || []) as any,
+                  quanEsFa: (raw.activitat.quanEsFa || 'puntual') as any,
+                  tags: (raw.activitat.tags || []) as any
+               },
+               nd: (raw.nd || FALLBACK_ND_DEFAULTS) as any,
+               modelUsed: response.model,
+               processingTimeMs: Date.now() - startTime
+            } as AgentOutput,
+            rawResponse: response.text
+         };
+      }
+      
       return {
         success: false,
         error: `Validation error: ${validated.error.message}`,
