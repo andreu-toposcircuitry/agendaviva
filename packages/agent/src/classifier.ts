@@ -37,6 +37,9 @@ const FALLBACK_ND_DEFAULTS = {
   confianca: 0,
 } as const;
 
+// Review reason constants
+const REVIEW_REASON_ND_DEFAULT = 'ND score missing, used default';
+
 // Minimum expected structure for fallback validation
 interface MinimalFallbackData {
   activitat?: {
@@ -47,6 +50,13 @@ interface MinimalFallbackData {
     [key: string]: unknown;
   };
   nd?: unknown;
+}
+
+/**
+ * Helper function to validate if a value is a valid activity name
+ */
+function isValidActivityName(nom: unknown): nom is string {
+  return typeof nom === 'string' && nom.length > 0;
 }
 
 /**
@@ -116,7 +126,7 @@ export async function classifyActivity(
       
       // Critical check: Skip activities without a name
       // If the AI didn't find a name, it's not a valid activity
-      if (!raw.activitat?.nom || typeof raw.activitat.nom !== 'string' || raw.activitat.nom.length === 0) {
+      if (!isValidActivityName(raw.activitat?.nom)) {
         return {
           success: false,
           error: 'No activity name identified (skipped)',
@@ -155,7 +165,7 @@ export async function classifyActivity(
     
     // Post-validation: Ensure defaults are set for nullable fields
     // This handles the case where validation passed but fields are null/undefined
-    if (!output.activitat.nom) {
+    if (!isValidActivityName(output.activitat.nom)) {
       // If validation passed but nom is still missing, skip this activity
       return {
         success: false,
@@ -176,8 +186,8 @@ export async function classifyActivity(
     if (!output.nd || output.nd.score === null || output.nd.score === undefined) {
       output.nd = FALLBACK_ND_DEFAULTS as any;
       output.needsReview = true;
-      if (!output.reviewReasons.includes('ND score missing, used default')) {
-        output.reviewReasons.push('ND score missing, used default');
+      if (!output.reviewReasons.includes(REVIEW_REASON_ND_DEFAULT)) {
+        output.reviewReasons.push(REVIEW_REASON_ND_DEFAULT);
       }
     }
 
