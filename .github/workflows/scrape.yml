@@ -32,7 +32,7 @@ jobs:
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
           # We provide a fake key here because the app checks for it on startup, 
           # even though the discovery script doesn't actually use it.
-          OPENAI_API_KEY: "sk-dummy-key-just-for-validation-pass"
+          OPENAI_API_KEY: "sk-dummy-for-validation-only"
 
       # 2. Run Scraper (Process active sources)
       - run: pnpm --filter @agendaviva/scraper scrape
