@@ -26,6 +26,29 @@ export interface BatchOptions extends ClassificationOptions {
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_TEMPERATURE = 0.2;
 
+// Fallback constants for when validation fails
+const FALLBACK_ND_DEFAULTS = {
+  score: 1,
+  nivell: 'nd_desafiador',
+  justificacio: 'Fallback data - requires manual review',
+  indicadorsPositius: [],
+  indicadorsNegatius: [],
+  recomanacions: [],
+  confianca: 0,
+} as const;
+
+// Minimum expected structure for fallback validation
+interface MinimalFallbackData {
+  activitat?: {
+    nom?: string;
+    tipologies?: unknown[];
+    quanEsFa?: string;
+    tags?: unknown[];
+    [key: string]: unknown;
+  };
+  nd?: unknown;
+}
+
 /**
  * Classify an activity using OpenAI
  */
@@ -88,8 +111,8 @@ export async function classifyActivity(
       // instead of failing completely.
       console.warn(`[Agent] Strict validation failed: ${validated.error.message}. Attempting fallback.`);
       
-      const raw = parsed as any;
-      if (raw.activitat && raw.activitat.nom) {
+      const raw = parsed as MinimalFallbackData;
+      if (raw.activitat?.nom) {
          return {
             success: true,
             output: {
@@ -98,14 +121,14 @@ export async function classifyActivity(
                reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
                activitat: {
                   ...raw.activitat,
-                  tipologies: raw.activitat.tipologies || [],
-                  quanEsFa: raw.activitat.quanEsFa || 'puntual',
-                  tags: raw.activitat.tags || []
+                  tipologies: (raw.activitat.tipologies || []) as any,
+                  quanEsFa: (raw.activitat.quanEsFa || 'puntual') as any,
+                  tags: (raw.activitat.tags || []) as any
                },
-               nd: raw.nd || { score: 1, nivell: 'nd_desafiador', justificacio: 'Fallback data', indicadorsPositius: [], indicadorsNegatius: [], recomanacions: [], confianca: 0 },
+               nd: (raw.nd || FALLBACK_ND_DEFAULTS) as any,
                modelUsed: response.model,
                processingTimeMs: Date.now() - startTime
-            },
+            } as AgentOutput,
             rawResponse: response.text
          };
       }

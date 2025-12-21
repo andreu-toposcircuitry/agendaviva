@@ -5,7 +5,6 @@ export interface FetchOptions {
   timeout?: number;
   retries?: number;
   userAgent?: string;
-  allowInsecureSSL?: boolean;
 }
 
 // Mimic a standard Chrome browser on macOS to avoid being identified as a bot
