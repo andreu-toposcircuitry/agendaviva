@@ -183,12 +183,10 @@ export async function classifyActivity(
     output.activitat.tags = output.activitat.tags ?? [];
     
     // Provide default ND score if missing
-    if (!output.nd || output.nd.score === null || output.nd.score === undefined) {
+    if (output.nd?.score == null) {
       output.nd = FALLBACK_ND_DEFAULTS as any;
       output.needsReview = true;
-      if (!output.reviewReasons.includes(REVIEW_REASON_ND_DEFAULT)) {
-        output.reviewReasons.push(REVIEW_REASON_ND_DEFAULT);
-      }
+      output.reviewReasons.push(REVIEW_REASON_ND_DEFAULT);
     }
 
     // Post-process: ensure ND-score 5 always needs review
@@ -200,7 +198,7 @@ export async function classifyActivity(
     }
 
     // Ensure low confidence also triggers review
-    if (output.nd && output.nd.confianca < 60 && !output.needsReview) {
+    if (output.nd && output.nd.confianca != null && output.nd.confianca < 60 && !output.needsReview) {
       output.needsReview = true;
       if (!output.reviewReasons.includes('Baixa confianca en avaluacio ND')) {
         output.reviewReasons.push('Baixa confianca en avaluacio ND');
