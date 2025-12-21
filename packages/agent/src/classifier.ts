@@ -108,11 +108,16 @@ export async function classifyActivity(
     if (!validated.success) {
       // FALLBACK STRATEGY: 
       // If strict validation fails, try to construct a partial object 
-      // instead of failing completely.
+      // instead of failing completely. This allows us to save partially
+      // valid data that can be reviewed and corrected by humans later.
       console.warn(`[Agent] Strict validation failed: ${validated.error.message}. Attempting fallback.`);
       
       const raw = parsed as MinimalFallbackData;
-      if (raw.activitat?.nom) {
+      
+      // Only attempt fallback if we have the absolute minimum: activity name
+      // and at least some structure. More validation would defeat the purpose
+      // of the fallback mechanism, which is to save as much as possible.
+      if (raw.activitat?.nom && typeof raw.activitat.nom === 'string' && raw.activitat.nom.length > 0) {
          return {
             success: true,
             output: {
@@ -121,6 +126,10 @@ export async function classifyActivity(
                reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
                activitat: {
                   ...raw.activitat,
+                  // NOTE: Using 'as any' here is intentional. We're in fallback mode
+                  // where the AI returned data that doesn't match our strict schema.
+                  // We accept the risk to save partial data for human review rather
+                  // than discarding potentially useful information.
                   tipologies: (raw.activitat.tipologies || []) as any,
                   quanEsFa: (raw.activitat.quanEsFa || 'puntual') as any,
                   tags: (raw.activitat.tags || []) as any
