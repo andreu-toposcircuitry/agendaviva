@@ -3,6 +3,7 @@
 > Directori participatiu d'activitats per a infants i joves al Vallès Oriental
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/andreu-toposcircuitry/agendaviva-vo/actions/workflows/ci.yml/badge.svg)](https://github.com/andreu-toposcircuitry/agendaviva-vo/actions/workflows/ci.yml)
 
 ## Què és?
 
@@ -10,21 +11,23 @@ Agenda Viva VO és un directori d'activitats extraescolars, culturals i de lleur
 
 ## Característiques
 
-- **Cerca per municipi, edat, tipologia**
-- **Filtre ND-readiness** (únic a Catalunya)
-- **Agent IA** que classifica activitats automàticament
-- **Revisió humana** per casos límit
-- **Ingesta per email** (les entitats envien, l'agent processa)
-- **Gratuït i obert**
+- 🔍 **Cerca per municipi, edat, tipologia**
+- ♿ **Filtre ND-readiness** (únic a Catalunya)
+- 🤖 **Agent IA** (GPT-4o-mini) que classifica activitats automàticament
+- 👥 **Revisió humana** per casos límit
+- 📧 **Ingesta per email** (les entitats envien, l'agent processa)
+- 💚 **Gratuït i obert**
 
 ## Arquitectura
 
 ```
 apps/web        → Frontend públic (Astro + Svelte)
 apps/admin      → Panel d'administració (SvelteKit)
-packages/agent  → Agent classificador (Claude Haiku)
+packages/shared → Tipus, constants, validadors (Zod)
+packages/agent  → Agent classificador (OpenAI GPT-4o-mini)
 packages/scraper→ Scraping de fonts
 workers/email   → Ingesta d'emails (Cloudflare)
+supabase/       → Esquema de base de dades
 ```
 
 ## Desenvolupament
@@ -38,6 +41,34 @@ pnpm dev
 
 # Construir per producció
 pnpm build
+
+# Executar tests
+pnpm test
+
+# Executar scraper
+pnpm --filter @agendaviva/scraper scrape
+```
+
+## Variables d'Entorn
+
+Copia `.env.example` a `.env` i configura:
+
+```
+# Supabase
+PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_KEY=eyJ...
+
+# OpenAI (per l'agent classificador)
+OPENAI_API_KEY=sk-...
+
+# Stripe (opcional)
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Públic
+PUBLIC_SITE_URL=https://agendaviva.cat
+PUBLIC_FORMSPREE_ID=...
 ```
 
 ## Documentació

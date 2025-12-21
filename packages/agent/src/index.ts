@@ -4,6 +4,7 @@ export {
   classifyActivities,
   type ClassificationResult,
   type ClassificationOptions,
+  type BatchOptions,
 } from './classifier.js';
 
 // Deduplication
@@ -18,4 +19,11 @@ export {
 export { SYSTEM_PROMPT, buildClassificationPrompt, type ClassificationHints } from './prompt.js';
 
 // Client utilities
-export { complete, getOpenAIClient, resetClient, type CompletionOptions, type CompletionResult } from './client.js';
+export {
+  complete,
+  getOpenAIClient,
+  resetClient,
+  type CompletionOptions,
+  type CompletionResult,
+  type RateLimitConfig,
+} from './client.js';

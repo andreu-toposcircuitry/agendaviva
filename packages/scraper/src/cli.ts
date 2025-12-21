@@ -2,6 +2,7 @@
 import { scrapeAllSources, scrapeSource, scrapeSingleUrl } from './scraper.js';
 import { getSupabaseClient, getActiveSources } from './storage.js';
 import { runDiscovery } from './discovery.js';
+import { scraperEnvSchema, validateEnv } from '@agendaviva/shared';
 
 function printHelp() {
   console.log(`
@@ -26,7 +27,7 @@ Options:
 Environment:
   SUPABASE_URL         Supabase project URL
   SUPABASE_SERVICE_KEY Supabase service role key
-  ANTHROPIC_API_KEY    Anthropic API key for classification
+  OPENAI_API_KEY       OpenAI API key for classification
   BRAVE_API_KEY        Brave Search API key for discovery
 `);
 }
@@ -68,6 +69,15 @@ async function main() {
   if (showHelp) {
     printHelp();
     process.exit(0);
+  }
+
+  // Validate environment before doing anything
+  try {
+    validateEnv(scraperEnvSchema, process.env as Record<string, string>);
+  } catch (error) {
+    console.error('Environment validation failed:');
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
   }
 
   // Handle discover command

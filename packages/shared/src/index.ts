@@ -112,3 +112,15 @@ export {
   truncateText,
   capitalizeFirst,
 } from './utils/index.js';
+
+// Environment validation
+export {
+  webEnvSchema,
+  agentEnvSchema,
+  scraperEnvSchema,
+  validateEnv,
+  checkRequiredEnv,
+  type WebEnv,
+  type AgentEnv,
+  type ScraperEnv,
+} from './env.js';
