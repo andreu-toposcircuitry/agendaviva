@@ -1,5 +1,5 @@
 import { agentOutputSchema, type AgentInput, type AgentOutput } from '@agendaviva/shared';
-import { complete } from './client.js';
+import { complete, type RateLimitConfig } from './client.js';
 import { SYSTEM_PROMPT, buildClassificationPrompt, type ClassificationHints } from './prompt.js';
 
 export interface ClassificationResult {
@@ -7,12 +7,20 @@ export interface ClassificationResult {
   output?: AgentOutput;
   error?: string;
   rawResponse?: string;
+  retriesUsed?: number;
 }
 
 export interface ClassificationOptions {
   model?: string;
   temperature?: number;
   hints?: ClassificationHints;
+  rateLimitConfig?: RateLimitConfig;
+}
+
+export interface BatchOptions extends ClassificationOptions {
+  onProgress?: (completed: number, total: number, current: ClassificationResult) => void;
+  continueOnError?: boolean; // Default: true
+  delayBetweenRequests?: number; // Additional delay in ms
 }
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
@@ -26,14 +34,21 @@ export async function classifyActivity(
   options: ClassificationOptions = {}
 ): Promise<ClassificationResult> {
   const startTime = Date.now();
-  const { model = DEFAULT_MODEL, temperature = DEFAULT_TEMPERATURE, hints } = options;
+  const {
+    model = DEFAULT_MODEL,
+    temperature = DEFAULT_TEMPERATURE,
+    hints,
+    rateLimitConfig
+  } = options;
 
   try {
-    // Call OpenAI
-    const response = await complete(SYSTEM_PROMPT, buildClassificationPrompt(input.text, hints), {
-      model,
-      temperature,
-    });
+    // Call OpenAI with rate limiting
+    const response = await complete(
+      SYSTEM_PROMPT,
+      buildClassificationPrompt(input.text, hints),
+      { model, temperature },
+      rateLimitConfig
+    );
 
     // Extract JSON from response
     const jsonMatch = response.text.match(/\{[\s\S]*\}/);
@@ -78,7 +93,7 @@ export async function classifyActivity(
     const output = validated.data as AgentOutput;
 
     // Post-process: ensure ND-score 5 always needs review
-    if (output.nd.score === 5) {
+    if (output.nd?.score === 5) {
       output.needsReview = true;
       if (!output.reviewReasons.includes('ND-score 5 requereix verificacio')) {
         output.reviewReasons.push('ND-score 5 requereix verificacio');
@@ -86,7 +101,7 @@ export async function classifyActivity(
     }
 
     // Ensure low confidence also triggers review
-    if (output.nd.confianca < 60 && !output.needsReview) {
+    if (output.nd && output.nd.confianca < 60 && !output.needsReview) {
       output.needsReview = true;
       if (!output.reviewReasons.includes('Baixa confianca en avaluacio ND')) {
         output.reviewReasons.push('Baixa confianca en avaluacio ND');
@@ -107,17 +122,60 @@ export async function classifyActivity(
 }
 
 /**
- * Batch classify multiple activities
+ * Batch classify multiple activities with progress tracking and error resilience
  */
 export async function classifyActivities(
   inputs: AgentInput[],
-  options: ClassificationOptions = {}
+  options: BatchOptions = {}
 ): Promise<ClassificationResult[]> {
-  const results: ClassificationResult[] = [];
+  const {
+    onProgress,
+    continueOnError = true,
+    delayBetweenRequests = 0,
+    ...classifyOptions
+  } = options;
 
-  for (const input of inputs) {
-    const result = await classifyActivity(input, options);
-    results.push(result);
+  const results: ClassificationResult[] = [];
+  const total = inputs.length;
+
+  for (let i = 0; i < inputs.length; i++) {
+    const input = inputs[i];
+
+    try {
+      const result = await classifyActivity(input, classifyOptions);
+      results.push(result);
+
+      if (onProgress) {
+        onProgress(i + 1, total, result);
+      }
+
+      // Don't add delay after the last request
+      if (delayBetweenRequests > 0 && i < inputs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayBetweenRequests));
+      }
+    } catch (error) {
+      const errorResult: ClassificationResult = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown batch error',
+      };
+
+      results.push(errorResult);
+
+      if (onProgress) {
+        onProgress(i + 1, total, errorResult);
+      }
+
+      if (!continueOnError) {
+        // Fill remaining with error placeholders
+        for (let j = i + 1; j < inputs.length; j++) {
+          results.push({
+            success: false,
+            error: 'Batch processing stopped due to previous error',
+          });
+        }
+        break;
+      }
+    }
   }
 
   return results;

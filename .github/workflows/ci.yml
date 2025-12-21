@@ -11,13 +11,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v2
         with:
           version: 8
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
+
       - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test
+
+      - name: Type check
+        run: pnpm turbo typecheck
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Lint (if available)
+        run: pnpm lint || true

@@ -4,6 +4,12 @@ import { TIPOLOGIES, MUNICIPIS, type Tipologia, type Municipi } from '@agendaviv
 
 const tipologies = Object.values(TIPOLOGIES) as Tipologia[];
 const municipis = (Object.values(MUNICIPIS) as Municipi[]).sort((a, b) => a.nom.localeCompare(b.nom));
+
+// Get Formspree ID from environment
+const formspreeId = import.meta.env.PUBLIC_FORMSPREE_ID;
+const formAction = formspreeId
+  ? `https://formspree.io/f/${formspreeId}`
+  : 'mailto:hola@agendaviva.cat'; // Fallback to email
 ---
 
 <Base title="Proposa una activitat" description="Proposa una nova activitat per al directori Agenda Viva VO">
@@ -25,7 +31,7 @@ const municipis = (Object.values(MUNICIPIS) as Municipi[]).sort((a, b) => a.nom.
 
     <!-- Form -->
     <form
-      action="https://formspree.io/f/YOUR_FORM_ID"
+      action={formAction}
       method="POST"
       class="space-y-6"
     >

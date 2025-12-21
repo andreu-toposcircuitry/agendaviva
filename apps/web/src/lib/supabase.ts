@@ -70,6 +70,22 @@ export interface GetActivitatsParams {
 }
 
 export async function getActivitats(params: GetActivitatsParams = {}) {
+  // If there's a search query, use the RPC function
+  if (params.q && params.q.trim()) {
+    return searchActivitats(
+      params.q,
+      {
+        municipi: params.municipi,
+        tipologia: params.tipologia,
+        ndMin: params.ndMin,
+        edat: params.edat,
+      },
+      params.limit || 20,
+      params.offset || 0
+    );
+  }
+
+  // Otherwise use direct query (existing logic)
   let query = supabase
     .from('activitats_public')
     .select('*', { count: 'exact' });
@@ -166,7 +182,7 @@ export async function searchActivitats(
   } = {},
   limit = 20,
   offset = 0
-) {
+): Promise<{ data: ActivitatPublic[] | null; error: any; count: number | null }> {
   const { data, error } = await supabase.rpc('search_activitats', {
     search_query: searchQuery || null,
     filter_municipi: filters.municipi || null,
@@ -177,5 +193,13 @@ export async function searchActivitats(
     result_offset: offset,
   });
 
-  return { data, error };
+  if (error) {
+    return { data: null, error, count: null };
+  }
+
+  return {
+    data: data as ActivitatPublic[] | null,
+    error: null,
+    count: data?.length ?? null
+  };
 }
