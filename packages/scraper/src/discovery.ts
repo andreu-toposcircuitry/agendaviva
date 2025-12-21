@@ -6,7 +6,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 // Configuration constants
-const STALE_SOURCE_THRESHOLD_YEARS = 2; // Delete sources not updated in this many years
 const RATE_LIMIT_DELAY_MS = 800; // Delay between API calls to be polite
 const TITLE_LENGTH_DB = 50; // Max title length for database storage
 const TITLE_LENGTH_LOG = 40; // Max title length for log display
@@ -88,97 +87,7 @@ export async function runDiscovery() {
     return;
   }
 
-  // 0. Clean up old/stale scraping sources
-  console.log('🧹 Cleaning up stale scraping sources...');
-  
-  // Create timestamp once for consistent comparisons throughout cleanup
-  const now = new Date();
-  
-  // Delete sources not updated in STALE_SOURCE_THRESHOLD_YEARS
-  const thresholdDate = new Date(now);
-  thresholdDate.setFullYear(thresholdDate.getFullYear() - STALE_SOURCE_THRESHOLD_YEARS);
-  
-  const { data: staleSources, error: staleError } = await supabase
-    .from('fonts_scraping')
-    .delete()
-    .lt('updated_at', thresholdDate.toISOString())
-    .select('id, nom');
-  
-  if (staleError) {
-    console.error('Error deleting stale sources:', staleError.message);
-  } else if (staleSources && staleSources.length > 0) {
-    console.log(`✅ Deleted ${staleSources.length} sources not updated in ${STALE_SOURCE_THRESHOLD_YEARS} years.`);
-  }
-
-  // Delete sources where ALL activities have ended
-  // Fetch all sources and their activities in optimized queries
-  const { data: allSources, error: sourcesError } = await supabase
-    .from('fonts_scraping')
-    .select('id, url, nom');
-
-  if (sourcesError) {
-    console.error('Error fetching sources:', sourcesError.message);
-  } else if (allSources && allSources.length > 0) {
-    // Fetch all activities with their font_url and data_fi in a single query
-    const { data: allActivities, error: actError } = await supabase
-      .from('activitats')
-      .select('font_url, data_fi')
-      .in('font_url', allSources.map(s => s.url));
-    
-    if (actError) {
-      console.error('Error fetching activities:', actError.message);
-    } else {
-      // Group activities by font_url
-      const activitiesBySource = new Map<string, Array<{ data_fi: string | null }>>();
-      if (allActivities) {
-        for (const activity of allActivities) {
-          if (!activitiesBySource.has(activity.font_url)) {
-            activitiesBySource.set(activity.font_url, []);
-          }
-          activitiesBySource.get(activity.font_url)!.push({ data_fi: activity.data_fi });
-        }
-      }
-      
-      const sourcesToDelete: string[] = [];
-      
-      for (const source of allSources) {
-        const activities = activitiesBySource.get(source.url);
-        
-        if (activities && activities.length > 0) {
-          // Check if ALL activities have ended
-          // Note: Using >= because we compare dates at midnight UTC. An activity with
-          // data_fi of "2025-01-20" is considered ongoing on "2025-01-20" throughout the day.
-          // Only activities with data_fi < today are considered fully expired.
-          const hasOngoingOrUnspecified = activities.some(
-            (act) => !act.data_fi || new Date(act.data_fi) >= now
-          );
-          
-          if (!hasOngoingOrUnspecified) {
-            // All activities have ended, mark for deletion
-            sourcesToDelete.push(source.id);
-          }
-        }
-        // If no activities found, keep the source (it might be new or just not scraped yet)
-      }
-      
-      if (sourcesToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('fonts_scraping')
-          .delete()
-          .in('id', sourcesToDelete);
-        
-        if (deleteError) {
-          console.error('Error deleting sources with expired activities:', deleteError.message);
-        } else {
-          console.log(`✅ Deleted ${sourcesToDelete.length} sources with all activities expired.`);
-        }
-      }
-    }
-  }
-  
-  console.log('');
-
-  // 1. Use the full list of municipalities from the shared package
+  // Use the full list of municipalities from the shared package
   const municipios = Object.values(MUNICIPIS) as Array<{ id: string; nom: string; codisPostals: string[]; poblacio: number }>;
   
   // 2. Specific keywords for children's activities + Current Year to ensure fresh content
