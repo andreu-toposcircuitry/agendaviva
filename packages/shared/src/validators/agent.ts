@@ -22,26 +22,28 @@ export const agentTipologiaResultSchema = z.object({
 
 /**
  * Agent ND result schema
+ * Relaxed to accept nullish values when AI fails to classify
  */
 export const agentNDResultSchema = z.object({
-  score: z.number().int().min(1).max(5),
-  nivell: z.string(),
-  justificacio: z.string(),
-  indicadorsPositius: z.array(z.string()),
-  indicadorsNegatius: z.array(z.string()),
-  recomanacions: z.array(z.string()),
-  confianca: z.number().min(0).max(100),
+  score: z.number().int().min(1).max(5).nullish(),
+  nivell: z.string().nullish(),
+  justificacio: z.string().nullish(),
+  indicadorsPositius: z.array(z.string()).nullish(),
+  indicadorsNegatius: z.array(z.string()).nullish(),
+  recomanacions: z.array(z.string()).nullish(),
+  confianca: z.number().min(0).max(100).nullish(),
 });
 
 /**
  * Agent activity result schema
  * FIXED: Changed .optional() to .nullish() to accept 'null' from AI
  * Increased max age to 100 to support adult activities
+ * nom is nullish to allow graceful handling in code when AI fails to extract name
  */
 export const agentActivitatResultSchema = z.object({
-  nom: z.string(),
+  nom: z.string().nullish(),
   descripcio: z.string().nullish(),
-  tipologies: z.array(agentTipologiaResultSchema),
+  tipologies: z.array(agentTipologiaResultSchema).nullish(),
   quanEsFa: z.enum(QUAN_ES_FA_CODIS as [string, ...string[]]).nullish(),
   municipiId: z.string().nullish(),
   barriZona: z.string().nullish(),
@@ -62,15 +64,16 @@ export const agentActivitatResultSchema = z.object({
 /**
  * Complete agent output schema
  * Make ND nullable in case the agent fails to generate it
+ * Relaxed fields to handle incomplete AI responses gracefully
  */
 export const agentOutputSchema = z.object({
-  confianca: z.number().min(0).max(100),
-  needsReview: z.boolean(),
-  reviewReasons: z.array(z.string()),
+  confianca: z.number().min(0).max(100).nullish(),
+  needsReview: z.boolean().nullish(),
+  reviewReasons: z.array(z.string()).nullish(),
   activitat: agentActivitatResultSchema,
   nd: agentNDResultSchema.nullish(),
-  modelUsed: z.string(),
-  processingTimeMs: z.number(),
+  modelUsed: z.string().optional(),
+  processingTimeMs: z.number().optional(),
   rawResponse: z.unknown().optional(),
 });
 

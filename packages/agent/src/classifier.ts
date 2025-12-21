@@ -37,6 +37,9 @@ const FALLBACK_ND_DEFAULTS = {
   confianca: 0,
 } as const;
 
+// Review reason constants
+const REVIEW_REASON_ND_DEFAULT = 'ND score missing, used default';
+
 // Minimum expected structure for fallback validation
 interface MinimalFallbackData {
   activitat?: {
@@ -47,6 +50,13 @@ interface MinimalFallbackData {
     [key: string]: unknown;
   };
   nd?: unknown;
+}
+
+/**
+ * Helper function to validate if a value is a valid activity name
+ */
+function isValidActivityName(nom: unknown): nom is string {
+  return typeof nom === 'string' && nom.length > 0;
 }
 
 /**
@@ -114,42 +124,70 @@ export async function classifyActivity(
       
       const raw = parsed as MinimalFallbackData;
       
-      // Only attempt fallback if we have the absolute minimum: activity name
-      // and at least some structure. More validation would defeat the purpose
-      // of the fallback mechanism, which is to save as much as possible.
-      if (raw.activitat?.nom && typeof raw.activitat.nom === 'string' && raw.activitat.nom.length > 0) {
-         return {
-            success: true,
-            output: {
-               confianca: 0,
-               needsReview: true,
-               reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
-               activitat: {
-                  ...raw.activitat,
-                  // NOTE: Using 'as any' here is intentional. We're in fallback mode
-                  // where the AI returned data that doesn't match our strict schema.
-                  // We accept the risk to save partial data for human review rather
-                  // than discarding potentially useful information.
-                  tipologies: (raw.activitat.tipologies || []) as any,
-                  quanEsFa: (raw.activitat.quanEsFa || 'puntual') as any,
-                  tags: (raw.activitat.tags || []) as any
-               },
-               nd: (raw.nd || FALLBACK_ND_DEFAULTS) as any,
-               modelUsed: response.model,
-               processingTimeMs: Date.now() - startTime
-            } as AgentOutput,
-            rawResponse: response.text
-         };
+      // Critical check: Skip activities without a name
+      // If the AI didn't find a name, it's not a valid activity
+      if (!isValidActivityName(raw.activitat?.nom)) {
+        return {
+          success: false,
+          error: 'No activity name identified (skipped)',
+          rawResponse: response.text,
+        };
       }
       
+      // Build fallback output with defaults for missing fields
       return {
-        success: false,
-        error: `Validation error: ${validated.error.message}`,
-        rawResponse: response.text,
+         success: true,
+         output: {
+            confianca: 0,
+            needsReview: true,
+            reviewReasons: ["Validation failed, saved via fallback", ...validated.error.errors.map(e => e.message)],
+            activitat: {
+               ...raw.activitat,
+               nom: raw.activitat.nom, // Verified above
+               // NOTE: Using 'as any' here is intentional. We're in fallback mode
+               // where the AI returned data that doesn't match our strict schema.
+               // We accept the risk to save partial data for human review rather
+               // than discarding potentially useful information.
+               tipologies: (raw.activitat.tipologies || []) as any,
+               quanEsFa: (raw.activitat.quanEsFa || 'puntual') as any,
+               tags: (raw.activitat.tags || []) as any
+            },
+            // Default ND score to 1 ("Desafiador") if AI failed to classify
+            nd: (raw.nd || FALLBACK_ND_DEFAULTS) as any,
+            modelUsed: response.model,
+            processingTimeMs: Date.now() - startTime
+         } as AgentOutput,
+         rawResponse: response.text
       };
     }
 
     const output = validated.data as AgentOutput;
+    
+    // Post-validation: Ensure defaults are set for nullable fields
+    // This handles the case where validation passed but fields are null/undefined
+    if (!isValidActivityName(output.activitat.nom)) {
+      // If validation passed but nom is still missing, skip this activity
+      return {
+        success: false,
+        error: 'No activity name identified (skipped)',
+        rawResponse: response.text,
+      };
+    }
+    
+    // Ensure defaults for required fields that may be null
+    output.confianca = output.confianca ?? 0;
+    output.needsReview = output.needsReview ?? true;
+    output.reviewReasons = output.reviewReasons ?? [];
+    output.activitat.tipologies = output.activitat.tipologies ?? [];
+    output.activitat.quanEsFa = output.activitat.quanEsFa ?? 'puntual';
+    output.activitat.tags = output.activitat.tags ?? [];
+    
+    // Provide default ND score if missing
+    if (output.nd?.score == null) {
+      output.nd = FALLBACK_ND_DEFAULTS as any;
+      output.needsReview = true;
+      output.reviewReasons.push(REVIEW_REASON_ND_DEFAULT);
+    }
 
     // Post-process: ensure ND-score 5 always needs review
     if (output.nd?.score === 5) {
@@ -160,7 +198,7 @@ export async function classifyActivity(
     }
 
     // Ensure low confidence also triggers review
-    if (output.nd && output.nd.confianca < 60 && !output.needsReview) {
+    if (output.nd && output.nd.confianca != null && output.nd.confianca < 60 && !output.needsReview) {
       output.needsReview = true;
       if (!output.reviewReasons.includes('Baixa confianca en avaluacio ND')) {
         output.reviewReasons.push('Baixa confianca en avaluacio ND');

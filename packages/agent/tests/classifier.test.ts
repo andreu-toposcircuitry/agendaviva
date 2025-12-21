@@ -271,6 +271,80 @@ describe('classifyActivity', () => {
     expect(result.output?.reviewReasons).toContain('Validation failed, saved via fallback');
   });
 
+  it('should skip activities without a name', async () => {
+    const responseWithoutNom = {
+      confianca: 80,
+      needsReview: false,
+      reviewReasons: [],
+      activitat: {
+        nom: null, // Missing name
+        descripcio: 'Some description',
+        tipologies: [{ codi: 'lleure', score: 75, justificacio: 'Lleure' }],
+        quanEsFa: 'setmanal',
+      },
+      nd: {
+        score: 3,
+        nivell: 'nd_compatible',
+        justificacio: 'Test',
+        indicadorsPositius: [],
+        indicadorsNegatius: [],
+        recomanacions: [],
+        confianca: 70,
+      },
+    };
+
+    mockComplete.mockResolvedValue({
+      text: JSON.stringify(responseWithoutNom),
+      model: 'gpt-4o-mini',
+      inputTokens: 100,
+      outputTokens: 200,
+    });
+
+    const input: AgentInput = {
+      text: 'Activity without name',
+      sourceType: 'scraping',
+    };
+
+    const result = await classifyActivity(input);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('No activity name identified (skipped)');
+  });
+
+  it('should provide default ND score when missing', async () => {
+    const responseWithoutND = {
+      confianca: 70,
+      needsReview: false,
+      reviewReasons: [],
+      activitat: {
+        nom: 'Test Activity',
+        tipologies: [{ codi: 'lleure', score: 80, justificacio: 'Lleure' }],
+        quanEsFa: 'setmanal',
+      },
+      nd: null, // Missing ND score
+    };
+
+    mockComplete.mockResolvedValue({
+      text: JSON.stringify(responseWithoutND),
+      model: 'gpt-4o-mini',
+      inputTokens: 100,
+      outputTokens: 200,
+    });
+
+    const input: AgentInput = {
+      text: 'Activity without ND',
+      sourceType: 'scraping',
+    };
+
+    const result = await classifyActivity(input);
+
+    expect(result.success).toBe(true);
+    expect(result.output?.nd.score).toBe(1); // Default score
+    expect(result.output?.nd.nivell).toBe('nd_desafiador');
+    expect(result.output?.needsReview).toBe(true);
+    expect(result.output?.reviewReasons).toContain('ND score missing, used default');
+  });
+
   it('should handle API errors gracefully', async () => {
     mockComplete.mockRejectedValue(new Error('API rate limit exceeded'));
 
