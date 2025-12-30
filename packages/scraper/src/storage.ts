@@ -188,6 +188,26 @@ export interface ScrapingSourceRecord {
 export async function getActiveSources(): Promise<ScrapingSourceRecord[]> {
   const sb = getSupabaseClient();
 
+  // First, get total count for diagnostics
+  const { count: totalCount } = await sb
+    .from('fonts_scraping')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: activeCount } = await sb
+    .from('fonts_scraping')
+    .select('*', { count: 'exact', head: true })
+    .eq('activa', true);
+
+  console.log(`\n📊 Database Status:`);
+  console.log(`   Total sources in fonts_scraping: ${totalCount ?? 'unknown'}`);
+  console.log(`   Active sources (activa=true): ${activeCount ?? 'unknown'}`);
+
+  if (totalCount === 0) {
+    console.log(`   ⚠️ Table is empty! Run discovery first: pnpm discover`);
+  } else if (activeCount === 0) {
+    console.log(`   ⚠️ No active sources! All ${totalCount} sources have activa=false`);
+  }
+
   const { data, error } = await sb
     .from('fonts_scraping')
     .select('*')

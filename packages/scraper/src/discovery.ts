@@ -38,16 +38,19 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * Search the web for events using Brave Search API
  * Uses freshness=py (Past Year) filter to only get recently updated pages
  */
+// Track API stats for summary
+let braveApiCalls = 0;
+let braveApiErrors = 0;
+let braveApiResults = 0;
+
 export async function searchWebForEvents(query: string): Promise<SearchResult[]> {
   if (!BRAVE_API_KEY) {
-    console.warn('⚠️ No BRAVE_API_KEY found. Skipping web discovery.');
     return [];
   }
 
+  braveApiCalls++;
+
   try {
-    // FRESHNESS FILTER: &freshness=py (Past Year)
-    // This ensures we only get pages updated in the last 12 months.
-    // Pages "not actualized in 2 years" will be completely ignored.
     const response = await fetch(
       `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&country=ES&search_lang=ca&freshness=py`,
       {
@@ -59,12 +62,20 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
     );
 
     if (!response.ok) {
-      console.error(`Brave Search failed: ${response.status} ${response.statusText}`);
+      braveApiErrors++;
+      // Log first few errors in detail
+      if (braveApiErrors <= 3) {
+        const body = await response.text().catch(() => '');
+        console.error(`❌ Brave API Error ${response.status}: ${response.statusText}`);
+        console.error(`   Query: "${query}"`);
+        console.error(`   Response: ${body.substring(0, 200)}`);
+      }
       return [];
     }
 
     const data: BraveSearchResponse = await response.json();
     const results = data.web?.results || [];
+    braveApiResults += results.length;
 
     return results.map((r) => ({
       title: r.title,
@@ -72,9 +83,16 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
       description: r.description,
     }));
   } catch (error) {
-    console.error('Error during Brave search:', error);
+    braveApiErrors++;
+    if (braveApiErrors <= 3) {
+      console.error('❌ Brave API Exception:', error instanceof Error ? error.message : error);
+    }
     return [];
   }
+}
+
+export function getBraveApiStats() {
+  return { calls: braveApiCalls, errors: braveApiErrors, results: braveApiResults };
 }
 
 /**
@@ -82,10 +100,38 @@ export async function searchWebForEvents(query: string): Promise<SearchResult[]>
  * This searches ALL municipalities in Vallès Oriental for children's activities
  */
 export async function runDiscovery() {
+  // === DIAGNOSTIC OUTPUT ===
+  console.log('='.repeat(50));
+  console.log('DISCOVERY DIAGNOSTICS');
+  console.log('='.repeat(50));
+  console.log(`BRAVE_API_KEY: ${BRAVE_API_KEY ? '✅ Set (' + BRAVE_API_KEY.substring(0, 8) + '...)' : '❌ MISSING'}`);
+  console.log(`SUPABASE_URL: ${SUPABASE_URL ? '✅ Set' : '❌ MISSING'}`);
+  console.log(`SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY ? '✅ Set' : '❌ MISSING'}`);
+  console.log('='.repeat(50));
+
+  if (!BRAVE_API_KEY) {
+    console.error('❌ BRAVE_API_KEY is missing! Discovery cannot search for sources.');
+    console.error('   Please add BRAVE_API_KEY to your GitHub repository secrets.');
+    return;
+  }
+
   if (!supabase) {
     console.error('❌ Supabase keys missing. Cannot save discovered sources.');
     return;
   }
+
+  // Test Supabase connection
+  console.log('\n🔍 Testing Supabase connection...');
+  const { count, error: countError } = await supabase
+    .from('fonts_scraping')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) {
+    console.error('❌ Supabase connection failed:', countError.message);
+    console.error('   This might be an RLS policy issue. Check fonts_scraping policies.');
+    return;
+  }
+  console.log(`✅ Supabase connected. Current sources in DB: ${count}`);
 
   // Use the full list of municipalities from the shared package
   const municipios = Object.values(MUNICIPIS) as Array<{ id: string; nom: string; codisPostals: string[]; poblacio: number }>;
@@ -172,5 +218,26 @@ export async function runDiscovery() {
     }
   }
 
-  console.log(`\n✨ Discovery Finished. Added ${totalAdded} new sources. Activated ${totalActivated} existing sources.`);
+  // Final summary with diagnostics
+  const stats = getBraveApiStats();
+  console.log('\n' + '='.repeat(50));
+  console.log('DISCOVERY SUMMARY');
+  console.log('='.repeat(50));
+  console.log(`Brave API calls: ${stats.calls}`);
+  console.log(`Brave API errors: ${stats.errors}`);
+  console.log(`Total search results: ${stats.results}`);
+  console.log(`Sources added: ${totalAdded}`);
+  console.log(`Sources reactivated: ${totalActivated}`);
+  console.log('='.repeat(50));
+
+  if (stats.calls === 0) {
+    console.error('\n⚠️ WARNING: No API calls were made!');
+    console.error('   Check if BRAVE_API_KEY is properly set in GitHub secrets.');
+  } else if (stats.results === 0 && stats.errors === 0) {
+    console.error('\n⚠️ WARNING: API returned 0 results for all queries.');
+    console.error('   This might be a rate limiting or API subscription issue.');
+  } else if (totalAdded === 0 && totalActivated === 0 && stats.results > 0) {
+    console.error('\n⚠️ WARNING: Found results but added nothing.');
+    console.error('   All URLs might be filtered (wikipedia, facebook) or already exist.');
+  }
 }
