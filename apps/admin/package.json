@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check",
-    "test": "echo 'No tests yet'"
+    "test": "echo 'No tests yet'",
+    "test:api": "node test-api.js"
   },
   "dependencies": {
     "@supabase/auth-ui-shared": "^0.1.8",

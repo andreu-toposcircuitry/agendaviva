@@ -84,6 +84,9 @@ PUBLIC_FORMSPREE_ID=...
 
 ## Documentació
 
+- [Guia de configuració d'entorn](docs/ENVIRONMENT_SETUP.md) - Com configurar variables d'entorn
+- [Guia de resolució de problemes](docs/TROUBLESHOOTING.md) - Solucions a errors comuns
+- [Guia de desplegament](DEPLOYMENT_GUIDE.md) - Desplegament a producció
 - [Criteris editorials](docs/EDITORIAL_GUIDELINES.md)
 - [Criteris ND](docs/ND_CRITERIA.md)
 - [Com contribuir](docs/CONTRIBUTING.md)
