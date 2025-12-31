@@ -79,12 +79,13 @@ jobs:
           HOST=$(python3 -c "import os, urllib.parse; print(urllib.parse.urlparse(os.environ.get('SUPABASE_URL','')).hostname)")
           echo "SUPABASE host: $HOST"
           echo "Attempting POST to fonts_scraping..."
+          TIMESTAMP=$(date +%s)
           curl -si -X POST "$SUPABASE_URL/rest/v1/fonts_scraping" \
             -H "Content-Type: application/json" \
             -H "apikey: $SUPABASE_SERVICE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
             -H "Prefer: return=representation" \
-            -d '{"nom":"ci-test","url":"https://example.com/ci-test-'"$(date +%s)"'","tipus":"web","activa":true}' | sed -n '1,200p'
+            -d "{\"nom\":\"ci-test\",\"url\":\"https://example.com/ci-test-${TIMESTAMP}\",\"tipus\":\"web\",\"activa\":true}" | sed -n '1,200p'
 
       - name: Check Supabase fonts_scraping count (before)
         env:
