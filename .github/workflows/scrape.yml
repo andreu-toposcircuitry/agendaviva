@@ -17,25 +17,92 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          
+
       # 👇 FIXED: Added --no-frozen-lockfile to ignore the lockfile mismatch
       - run: pnpm install --no-frozen-lockfile
-      
+
       # Build dependencies
       - run: pnpm exec turbo run build --filter=@agendaviva/scraper...
 
-      # 1. Run Discovery (Find new sources)
-      - run: pnpm --filter @agendaviva/scraper discover
+      # ============================================================
+      # DIAGNOSTICS SECTION - Debug steps to understand discovery issues
+      # ============================================================
+
+      - name: Check env presence
+        run: |
+          echo "BRAVE_API_KEY present: ${BRAVE_API_KEY:+yes}"
+          echo "SUPABASE_URL present: ${SUPABASE_URL:+yes}"
+          echo "SUPABASE_SERVICE_KEY present: ${SUPABASE_SERVICE_KEY:+yes}"
+          echo "OPENAI_API_KEY present: ${OPENAI_API_KEY:+yes}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+
+      - name: Test Brave API
+        env:
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+        run: |
+          if [ -z "$BRAVE_API_KEY" ]; then
+            echo "BRAVE_API_KEY missing; skipping Brave test"
+            exit 0
+          fi
+          Q="agenda cultural Granollers"
+          RESP=$(curl -s -H "Accept: application/json" -H "X-Subscription-Token: $BRAVE_API_KEY" \
+            "https://api.search.brave.com/res/v1/web/search?q=$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$Q")&count=5&country=ES&search_lang=ca&freshness=py")
+          echo "Brave test: keys: $(echo "$RESP" | jq 'keys')"
+          echo "Brave results length: $(echo "$RESP" | jq '.web.results | length // 0')"
+          echo "Brave sample:"
+          echo "$RESP" | jq '.web.results[0:3] | map({title:.title, url:.url, description:.description})'
+
+      - name: Check Supabase fonts_scraping count (before)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "Supabase creds missing"; exit 0; fi
+          COUNT=$(curl -s "$SUPABASE_URL/rest/v1/fonts_scraping?select=id" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" | jq 'length')
+          echo "Existing fonts_scraping count: $COUNT"
+
+      - name: Run discovery (debug)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
-          # We provide a fake key here because the app checks for it on startup, 
+          OPENAI_API_KEY: "sk-dummy-for-validation-only"
+          DISCOVERY_DEBUG_LIMIT: "1"
+        run: pnpm --filter @agendaviva/scraper discover
+
+      - name: Fetch newly inserted fonts_scraping rows (after)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "Supabase creds missing"; exit 0; fi
+          curl -s "$SUPABASE_URL/rest/v1/fonts_scraping?select=id,nom,url,activa,created_at&order=created_at.desc&limit=10" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" | jq .
+
+      # ============================================================
+      # FULL DISCOVERY & SCRAPER - Regular workflow continues here
+      # ============================================================
+
+      # 1. Run Discovery (Find new sources) - Full run after debug
+      - name: Run Discovery (full)
+        run: pnpm --filter @agendaviva/scraper discover
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          # We provide a fake key here because the app checks for it on startup,
           # even though the discovery script doesn't actually use it.
           OPENAI_API_KEY: "sk-dummy-for-validation-only"
 
       # 2. Run Scraper (Process active sources)
-      - run: pnpm --filter @agendaviva/scraper scrape
+      - name: Run Scraper
+        run: pnpm --filter @agendaviva/scraper scrape
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
