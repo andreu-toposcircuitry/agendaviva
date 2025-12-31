@@ -113,6 +113,7 @@ export async function saveActivityFromAgent(
         );
       } else {
         // Try postal code if it looks numeric
+        // Note: Using non-anchored regex to extract postal code from text like "City 08400"
         const postalMatch = /\d{5}/.exec(rawMunicipi);
         if (postalMatch) {
           const byPostal = getMunicipiByPostalCode(postalMatch[0]);
@@ -134,12 +135,15 @@ export async function saveActivityFromAgent(
     }
     
     // Tipologia principal fallback
-    const tipologiaPrincipal =
-      activitat.tipologies && activitat.tipologies.length > 0
-        ? activitat.tipologies[0].codi
-        : 'lleure'; // Fallback to 'lleure' to satisfy NOT NULL constraint
+    const tipologiesArray = activitat.tipologies && activitat.tipologies.length > 0 
+      ? activitat.tipologies 
+      : null;
+      
+    const tipologiaPrincipal = tipologiesArray 
+      ? tipologiesArray[0].codi
+      : 'lleure'; // Fallback to 'lleure' to satisfy NOT NULL constraint
     
-    if (!activitat.tipologies || activitat.tipologies.length === 0) {
+    if (!tipologiesArray) {
       additionalReviewReasons.push(
         'Tipologia no classificada - assignada per defecte com "lleure"'
       );
@@ -157,7 +161,7 @@ export async function saveActivityFromAgent(
         slug,
         descripcio: activitat.descripcio,
         entitat_id: entitatId,
-        tipologies: activitat.tipologies?.map((t) => ({
+        tipologies: tipologiesArray?.map((t) => ({
           codi: t.codi,
           score: t.score,
           justificacio: t.justificacio,

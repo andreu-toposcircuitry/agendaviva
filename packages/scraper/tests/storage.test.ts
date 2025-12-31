@@ -241,6 +241,9 @@ describe('saveActivityFromAgent - Municipality Normalization', () => {
 describe('saveActivityFromAgent - Tipologia Fallback', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+  
+  afterEach(() => {
     resetSupabaseClient();
   });
 
