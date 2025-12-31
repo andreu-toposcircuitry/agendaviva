@@ -4,6 +4,7 @@
   import { ThemeSupa } from '@supabase/auth-ui-shared';
   import { supabase } from '$lib/supabase';
   import { isModerator, user } from '$lib/stores/auth';
+  import Toast from '$lib/components/Toast.svelte';
 </script>
 
 {#if !$user}
@@ -41,3 +42,5 @@
     </main>
   </div>
 {/if}
+
+<Toast />
