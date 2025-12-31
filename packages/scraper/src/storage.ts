@@ -1,5 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { generateSlug, generateUniqueSlug, type AgentOutput } from '@agendaviva/shared';
+import { 
+  generateSlug, 
+  generateUniqueSlug, 
+  type AgentOutput,
+  getMunicipi,
+  searchMunicipis,
+  getMunicipiByPostalCode,
+} from '@agendaviva/shared';
 
 let supabase: SupabaseClient | null = null;
 
@@ -83,7 +90,70 @@ export async function saveActivityFromAgent(
     // Note: Agent output doesn't include entitat in current schema
     // This can be extended when entitat extraction is added
 
-    // 4. Insert activity
+    // 4. Normalize and validate critical fields before insert
+    const additionalReviewReasons: string[] = [];
+    
+    // Normalize municipality: map name to ID if needed
+    let municipiIdToSave: string | null = null;
+    const rawMunicipi = activitat.municipiId;
+    
+    if (rawMunicipi && getMunicipi(rawMunicipi)) {
+      // Already a valid canonical ID
+      municipiIdToSave = rawMunicipi;
+    } else if (typeof rawMunicipi === 'string' && rawMunicipi.trim().length > 0) {
+      // Try to map by name (handles accents)
+      const matches = searchMunicipis(rawMunicipi);
+      if (matches.length === 1) {
+        municipiIdToSave = matches[0].id;
+      } else if (matches.length > 1) {
+        // Ambiguous - queue for review
+        municipiIdToSave = null;
+        additionalReviewReasons.push(
+          `Municipi ambigu: "${rawMunicipi}" coincideix amb múltiples municipis`
+        );
+      } else {
+        // Try postal code if it looks numeric
+        // Note: Using non-anchored regex to extract postal code from text like "City 08400"
+        const postalMatch = /\d{5}/.exec(rawMunicipi);
+        if (postalMatch) {
+          const byPostal = getMunicipiByPostalCode(postalMatch[0]);
+          if (byPostal) {
+            municipiIdToSave = byPostal.id;
+          }
+        }
+        
+        if (!municipiIdToSave) {
+          // Unknown municipality - queue for review
+          additionalReviewReasons.push(
+            `Municipi no reconegut: "${rawMunicipi}"`
+          );
+        }
+      }
+    } else {
+      // No municipality provided
+      additionalReviewReasons.push('Municipi no especificat');
+    }
+    
+    // Tipologia principal fallback
+    const tipologiesArray = activitat.tipologies && activitat.tipologies.length > 0 
+      ? activitat.tipologies 
+      : null;
+      
+    const tipologiaPrincipal = tipologiesArray 
+      ? tipologiesArray[0].codi
+      : 'lleure'; // Fallback to 'lleure' to satisfy NOT NULL constraint
+    
+    if (!tipologiesArray) {
+      additionalReviewReasons.push(
+        'Tipologia no classificada - assignada per defecte com "lleure"'
+      );
+    }
+    
+    // Update needsReview status if we added reasons
+    const finalNeedsReview = needsReview || additionalReviewReasons.length > 0;
+    const allReviewReasons = [...(reviewReasons || []), ...additionalReviewReasons];
+
+    // 5. Insert activity
     const { data: newActivitat, error: actError } = await sb
       .from('activitats')
       .insert({
@@ -91,17 +161,17 @@ export async function saveActivityFromAgent(
         slug,
         descripcio: activitat.descripcio,
         entitat_id: entitatId,
-        tipologies: activitat.tipologies.map((t) => ({
+        tipologies: tipologiesArray?.map((t) => ({
           codi: t.codi,
           score: t.score,
           justificacio: t.justificacio,
-        })),
-        tipologia_principal: activitat.tipologies[0]?.codi,
+        })) || [],
+        tipologia_principal: tipologiaPrincipal,
         quan_es_fa: activitat.quanEsFa || 'puntual', // Fallback if null
         edat_min: activitat.edatMin,
         edat_max: activitat.edatMax,
         edat_text: activitat.edatText,
-        municipi_id: activitat.municipiId,
+        municipi_id: municipiIdToSave,
         barri_zona: activitat.barriZona,
         espai: activitat.espai,
         adreca: activitat.adreca,
@@ -123,7 +193,7 @@ export async function saveActivityFromAgent(
         nd_confianca: nd?.confianca || 0,
         nd_verificat_per: 'inferit',
         // Status
-        estat: needsReview ? 'pendent' : 'publicada',
+        estat: finalNeedsReview ? 'pendent' : 'publicada',
         // Source tracking
         font_url: sourceUrl,
         font_text: sourceText.slice(0, 5000),
@@ -139,16 +209,16 @@ export async function saveActivityFromAgent(
 
     if (actError) throw actError;
 
-    // 5. Add to review queue if needed
+    // 6. Add to review queue if needed
     let cuaId: string | undefined;
-    if (needsReview && newActivitat) {
+    if (finalNeedsReview && newActivitat) {
       const { data: cuaItem } = await sb
         .from('cua_revisio')
         .insert({
           activitat_id: newActivitat.id,
           prioritat: confianca < 50 ? 'alta' : 'mitjana',
-          motiu: reviewReasons.join('; '),
-          motiu_detall: { reasons: reviewReasons },
+          motiu: allReviewReasons.join('; '),
+          motiu_detall: { reasons: allReviewReasons },
           temps_estimat_minuts: 3,
         })
         .select('id')
