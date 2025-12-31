@@ -84,7 +84,7 @@ jobs:
             -H "apikey: $SUPABASE_SERVICE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
             -H "Prefer: return=representation" \
-            -d '{"nom":"ci-test","url":"https://example.com/ci-test-'"$(date +%s)"'","tipus":"web","activa":true,"prioritat":5}' | sed -n '1,200p'
+            -d '{"nom":"ci-test","url":"https://example.com/ci-test-'"$(date +%s)"'","tipus":"web","activa":true}' | sed -n '1,200p'
 
       - name: Check Supabase fonts_scraping count (before)
         env:
