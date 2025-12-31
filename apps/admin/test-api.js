@@ -9,6 +9,9 @@
  * - Health check endpoint is accessible
  * - API endpoints return proper error codes when not authenticated
  * 
+ * Note: Uses CommonJS (require) to ensure compatibility with direct node execution
+ * without transpilation or build step.
+ * 
  * Usage:
  *   node test-api.js [base-url]
  *   

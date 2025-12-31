@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { RequestEvent } from '@sveltejs/kit';
 
-const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || 'http://localhost:54321';
-const supabaseKey = process.env.PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-for-build';
+// Use import.meta.env for consistency with SvelteKit
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-for-build';
 
 /**
  * Creates a Supabase client that can read the user's session from cookies
