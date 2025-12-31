@@ -26,6 +26,8 @@
   
   let activities: Activity[] = [];
   let loading = true;
+  let error: string | null = null;
+  let retryCount = 0;
   let totalCount = 0;
   let currentPage = 1;
   let pageSize = 20;
@@ -60,6 +62,7 @@
   
   async function loadActivities() {
     loading = true;
+    error = null;
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -79,15 +82,46 @@
       if (ndScoreMax) params.set('nd_score_max', ndScoreMax);
       
       const response = await fetch(`/api/activitats?${params}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch activities');
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use the default error message
+        }
+        
+        if (response.status === 401) {
+          error = 'No autenticat. Si us plau, torna a iniciar sessió.';
+        } else if (response.status === 403) {
+          error = 'No tens permisos per accedir a aquesta pàgina. Necessites rol d\'admin o moderador.';
+        } else if (response.status === 404) {
+          error = 'L\'endpoint de l\'API no s\'ha trobat. Verifica la configuració del servidor.';
+        } else if (response.status >= 500) {
+          error = `Error del servidor: ${errorMessage}. Comprova els logs del servidor.`;
+        } else {
+          error = `Error: ${errorMessage}`;
+        }
+        
+        throw new Error(error);
       }
       
       const data = await response.json();
       activities = data.activities;
       totalCount = data.totalCount;
-    } catch (error: any) {
-      toast.error('Error carregant activitats: ' + error.message);
+      retryCount = 0; // Reset retry count on success
+    } catch (err: any) {
+      console.error('Error loading activities:', err);
+      
+      // Handle network errors specifically
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        error = 'Error de xarxa: No es pot connectar amb el servidor. Verifica que el servidor està actiu i les variables d\'entorn estan configurades correctament.';
+      } else {
+        error = err.message || 'Error desconegut carregant activitats';
+      }
+      
+      toast.error(error);
     } finally {
       loading = false;
     }
@@ -334,6 +368,45 @@
       <div class="text-center py-12">
         <div class="inline-block animate-spin text-4xl">⟳</div>
         <p class="mt-2 text-gray-500">Carregant...</p>
+      </div>
+    {:else if error}
+      <div class="text-center py-12">
+        <div class="text-red-600 text-4xl mb-4">⚠️</div>
+        <p class="text-red-600 text-lg font-semibold mb-2">Error carregant activitats</p>
+        <p class="text-gray-600 mb-4 max-w-2xl mx-auto">{error}</p>
+        <div class="flex gap-2 justify-center">
+          <button on:click={loadActivities} class="btn btn-primary">
+            Tornar a intentar
+          </button>
+          <a href="/api/health" target="_blank" class="btn btn-secondary">
+            Comprovar estat del servidor
+          </a>
+        </div>
+        <details class="mt-6 text-left max-w-2xl mx-auto">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+            Consells per solucionar problemes
+          </summary>
+          <div class="mt-4 text-sm text-gray-600 space-y-2 bg-gray-50 p-4 rounded">
+            <p><strong>Si l'error és d'autenticació:</strong></p>
+            <ul class="list-disc list-inside ml-4">
+              <li>Assegura't que has iniciat sessió</li>
+              <li>Verifica que el teu compte té permisos d'admin o moderador</li>
+              <li>Prova a tancar sessió i tornar a iniciar-la</li>
+            </ul>
+            <p><strong>Si l'error és de xarxa:</strong></p>
+            <ul class="list-disc list-inside ml-4">
+              <li>Comprova que les variables d'entorn PUBLIC_SUPABASE_URL i PUBLIC_SUPABASE_ANON_KEY estan configurades</li>
+              <li>Verifica que el servidor està actiu executant <code class="bg-gray-200 px-1 rounded">pnpm dev</code></li>
+              <li>Comprova la consola del navegador per més detalls</li>
+            </ul>
+            <p><strong>Si l'error és del servidor (500):</strong></p>
+            <ul class="list-disc list-inside ml-4">
+              <li>Revisa els logs del servidor</li>
+              <li>Verifica la connexió a la base de dades</li>
+              <li>Comprova que les migracions de BD estan aplicades</li>
+            </ul>
+          </div>
+        </details>
       </div>
     {:else if activities.length === 0}
       <div class="text-center py-12">

@@ -51,10 +51,19 @@ pnpm --filter @agendaviva/scraper scrape
 
 ## Variables d'Entorn
 
-Copia `.env.example` a `.env` i configura:
+**Important:** Abans d'executar l'aplicació, has de configurar les variables d'entorn.
+
+Copia `.env.example` a `.env` i configura amb les teves credencials de Supabase:
+
+```bash
+cp .env.example .env
+# Edita .env amb les teves credencials
+```
+
+Variables requerides:
 
 ```
-# Supabase
+# Supabase (obligatori)
 PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_KEY=eyJ...
@@ -71,8 +80,13 @@ PUBLIC_SITE_URL=https://agendaviva.cat
 PUBLIC_FORMSPREE_ID=...
 ```
 
+**Per més detalls:** Consulta la [guia de configuració d'entorn](docs/ENVIRONMENT_SETUP.md)
+
 ## Documentació
 
+- [Guia de configuració d'entorn](docs/ENVIRONMENT_SETUP.md) - Com configurar variables d'entorn
+- [Guia de resolució de problemes](docs/TROUBLESHOOTING.md) - Solucions a errors comuns
+- [Guia de desplegament](DEPLOYMENT_GUIDE.md) - Desplegament a producció
 - [Criteris editorials](docs/EDITORIAL_GUIDELINES.md)
 - [Criteris ND](docs/ND_CRITERIA.md)
 - [Com contribuir](docs/CONTRIBUTING.md)

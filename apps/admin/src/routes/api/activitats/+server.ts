@@ -22,18 +22,31 @@ export const GET: RequestHandler = async ({ url, locals }) => {
     // Check authentication
     const user = locals.user;
     if (!user) {
-      throw error(401, 'Authentication required');
+      console.error('Authentication failed: No user in locals');
+      throw error(401, {
+        message: 'Authentication required. Please sign in.'
+      });
     }
 
     // Check if user is admin/moderator
-    const { data: adminUser } = await supabase
+    const { data: adminUser, error: adminError } = await supabase
       .from('admin_users')
       .select('role, is_active')
       .eq('user_id', user.id)
       .single();
 
+    if (adminError) {
+      console.error('Error checking admin status:', adminError);
+      throw error(403, {
+        message: 'Failed to verify admin permissions. Check database configuration and RLS policies.'
+      });
+    }
+
     if (!adminUser || !adminUser.is_active) {
-      throw error(403, 'Admin/Moderator role required');
+      console.error('User not authorized:', user.id);
+      throw error(403, {
+        message: 'Admin or Moderator role required. Your account needs to be added to the admin_users table.'
+      });
     }
 
     // Parse query parameters
@@ -126,7 +139,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
     if (queryError) {
       console.error('Error fetching activities:', queryError);
-      throw error(500, 'Failed to fetch activities');
+      throw error(500, {
+        message: `Database query failed: ${queryError.message}. Check database connection and table structure.`
+      });
     }
 
     // Transform data to include municipi_nom
@@ -157,6 +172,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       throw err;
     }
     console.error('Unexpected error in activities list:', err);
-    throw error(500, 'Internal server error');
+    throw error(500, {
+      message: `Internal server error: ${err.message || 'Unknown error'}`
+    });
   }
 };
