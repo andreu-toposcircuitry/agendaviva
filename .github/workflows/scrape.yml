@@ -56,6 +56,37 @@ jobs:
           echo "Brave sample:"
           echo "$RESP" | jq '.web.results[0:3] | map({title:.title, url:.url, description:.description})'
 
+      - name: Supabase whoami test (CI)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          set -e
+          HOST=$(python3 -c "import os, urllib.parse; print(urllib.parse.urlparse(os.environ.get('SUPABASE_URL','')).hostname)")
+          echo "SUPABASE host: $HOST"
+          echo "Calling RPC whoami with service_role key..."
+          curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/whoami" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' | jq .
+
+      - name: Supabase write test (CI, verbose)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          HOST=$(python3 -c "import os, urllib.parse; print(urllib.parse.urlparse(os.environ.get('SUPABASE_URL','')).hostname)")
+          echo "SUPABASE host: $HOST"
+          echo "Attempting POST to fonts_scraping..."
+          TIMESTAMP=$(date +%s)
+          curl -si -X POST "$SUPABASE_URL/rest/v1/fonts_scraping" \
+            -H "Content-Type: application/json" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Prefer: return=representation" \
+            -d "{\"nom\":\"ci-test\",\"url\":\"https://example.com/ci-test-${TIMESTAMP}\",\"tipus\":\"web\",\"activa\":true}" | sed -n '1,200p'
+
       - name: Check Supabase fonts_scraping count (before)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
