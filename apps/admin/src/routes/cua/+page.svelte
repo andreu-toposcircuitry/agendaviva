@@ -37,7 +37,8 @@
   async function loadQueue() {
     loading = true;
     try {
-      const { data } = await import('$lib/supabase').then(m => m.supabase)
+      const { supabase } = await import('$lib/supabase');
+      const { data } = await supabase
         .from('cua_revisio_detall')
         .select('*')
         .order('prioritat')
