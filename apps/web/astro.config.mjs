@@ -22,7 +22,12 @@ export default defineConfig({
       }
     },
     ssr: {
-      external: ['node:buffer', 'node:crypto']
+      external: ['node:buffer', 'node:crypto', 'node:async_hooks']
+    },
+    build: {
+      rollupOptions: {
+        external: ['node:async_hooks']
+      }
     }
   }
 });
