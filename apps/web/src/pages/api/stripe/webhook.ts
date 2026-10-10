@@ -2,14 +2,14 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-04-10',
 });
 
-// Use service key for webhook processing
+// Use service key for webhook processing (with fallback for build time)
 const supabase = createClient(
-  import.meta.env.PUBLIC_SUPABASE_URL,
-  import.meta.env.SUPABASE_SERVICE_KEY
+  import.meta.env.PUBLIC_SUPABASE_URL || '',
+  import.meta.env.SUPABASE_SERVICE_KEY || ''
 );
 
 export const POST: APIRoute = async ({ request }) => {
