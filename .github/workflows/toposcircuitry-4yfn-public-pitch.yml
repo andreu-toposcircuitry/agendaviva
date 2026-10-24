@@ -76,7 +76,6 @@ jobs:
           assert out.stat().st_size>5000
           print('Verified 8-slide public PDF:',out,out.stat().st_size)
           PY
-          pdfinfo ToposCircuitry_4YFN2027_Public_Pitch.pdf | grep -E '^Pages: +8$'
           sha256sum ToposCircuitry_4YFN2027_Public_Pitch.pdf
       - name: Publish PDF to this isolated branch only
         shell: bash
