@@ -1,0 +1,89 @@
+name: Publish ToposCircuitry 4YFN27 public investor deck
+on:
+  push:
+    branches: [toposcircuitry-4yfn27-pitch-2026-10]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  publish:
+    if: "!contains(github.event.head_commit.message, '[generated]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build public PDF from reviewed text and official web logo
+        shell: bash
+        run: |
+          python -m pip -q install 'reportlab>=4,<5' 'cairosvg>=2,<3'
+          curl --fail --silent --show-error --location --max-time 25 'https://www.toposcircuitry.com/00/imatges/toposcircuitry00_logo01c.svg' --output official-logo.svg
+          test "$(wc -c < official-logo.svg)" -lt 200000
+          python - <<'PY'
+          import io
+          from reportlab.pdfgen import canvas
+          from reportlab.lib.colors import HexColor
+          from reportlab.pdfbase.pdfmetrics import stringWidth
+          import cairosvg
+          from pathlib import Path
+          logo=cairosvg.svg2png(bytestring=Path('official-logo.svg').read_bytes(),output_width=260,output_height=130)
+          from reportlab.lib.utils import ImageReader
+          logo=ImageReader(io.BytesIO(logo))
+          pages=[
+          ('Proof that can be checked.','Topological structural certification for semiconductor design','Topos Structural Certificate v1 computes a precisely delimited mathematical property of a supplied digital-hardware structural model. Its signed results are independently recomputable.','AVAILABLE AS A SCOPED B2B ASSESSMENT'),
+          ('The verification gap','Early structural evidence, rather than another heuristic alarm','Engineering teams work with huge design spaces. A topology-based measurement can identify structural features missed by graph-cycle counts, with explicit mathematical assumptions and auditable evidence.','We certify model properties, not functional correctness, deadlock freedom, PPA improvement, or regulatory compliance.'),
+          ('A precise and honest product','Certified kernel v1 / GF(2) / H1','Input: supported normalized structural JSON or Yosys JSON. Output: a design-bound machine-readable certificate containing the first Betti number, a witness when nonzero, cryptographic provenance and an Ed25519 signature.','Verification recomputes the model and mathematical result. A signature alone is not enough.'),
+          ('Technical evidence, not speculation','Executable kernel / test corpus / verifiable output','The frozen certificate kernel passed canonical release tests and a complete GitHub Actions acceptance flow on 24 October 2026. Synthetic examples with beta1 = 0 and beta1 = 1 were issued and verified using disposable QA credentials.','Commercial signing identity and customer-data processing controls are commissioned separately; QA certificates are not production certificates.'),
+          ('Go to market','Start narrow. Learn with paid design-team pilots.','Initial customers: semiconductor design teams, EDA vendors and hardware engineering groups. Model: fixed-scope B2B assessment per design, followed by repeat verification, integrations and enterprise licensing if validated.','Early market presence: Spain / EU. No paying product customers claimed.'),
+          ('Market opportunity','A specialist wedge into electronic design automation','Global IC physical-design and verification revenue in Q2 2026 was USD 818.3 million (SEMI / ESD Alliance). Annualised at the ECB 23 October 2026 reference rate, that is approximately EUR 2.92 billion. The directly addressable market for v1 is narrower.','This is an adjacent software category proxy, not a bottom-up estimate of v1 customer spending.'),
+          ('Roadmap and investment','Demonstrate industrial value before claiming physical savings','0-6 months: first paid B2B engagements, customer verification and secure intake. 6-12 months: controlled comparisons with graph-only baselines and measurements of PPA. 12-24 months: repeatable integrations and scalable distribution.','Fundraising objective: EUR 750,000 pre-seed (target, not funds raised).'),
+          ('Company and contact','Founded in Spain in July 2025 / digital semiconductor infrastructure','ToposCircuitry, S.L. develops formal structural evidence tooling for digital hardware. Founder and managing director: Dr Andreu Ballus Santacana. Patent application pending; independent evaluation of computational performance under way.','Discuss a scoped pilot: andreuballus@toposcircuitry.com')]
+          out=Path('ToposCircuitry_4YFN2027_Public_Pitch.pdf')
+          c=canvas.Canvas(str(out),pagesize=(960,540),pageCompression=1)
+          c.setTitle('ToposCircuitry - 4YFN 2027 Public Pitch')
+          c.setAuthor('TOPOSCIRCUITRY SL')
+          def wrap(txt,pt,maxw,font='Helvetica'):
+              words=txt.split(); lines=[];line=''
+              for word in words:
+                  test=(line+' '+word).strip()
+                  if stringWidth(test,font,pt)>maxw and line:
+                      lines.append(line);line=word
+                  else:line=test
+              if line:lines.append(line)
+              return lines
+          for i,(title,sub,body,callout) in enumerate(pages,1):
+              c.setFillColor(HexColor('#0E1A21'));c.rect(0,0,960,540,stroke=0,fill=1)
+              c.setFillColor(HexColor('#1CBBC4'));c.rect(45,455,590,3,stroke=0,fill=1)
+              c.setFont('Helvetica-Bold',13);c.drawString(45,495,'TOPOSCIRCUITRY  /  4YFN AWARDS 2027')
+              c.drawImage(logo,760,418,width=170,height=85,mask='auto')
+              c.setFillColor(HexColor('#F0F8F9'));c.setFont('Helvetica-Bold',34);c.drawString(45,362,title)
+              c.setFillColor(HexColor('#5BD4D9'));c.setFont('Helvetica-Bold',17);c.drawString(46,315,sub)
+              c.setFillColor(HexColor('#E0EDF0'));c.setFont('Helvetica',18)
+              for j,line in enumerate(wrap(body,18,850)):c.drawString(48,263-26*j,line)
+              c.setFillColor(HexColor('#19313A'));c.roundRect(45,65,870,76,8,stroke=0,fill=1)
+              c.setFillColor(HexColor('#64E2E8'));c.setFont('Helvetica-Bold',15)
+              for j,line in enumerate(wrap(callout,15,840,'Helvetica-Bold')):c.drawString(60,112-22*j,line)
+              c.setFillColor(HexColor('#90A5AF'));c.setFont('Helvetica',11)
+              c.drawString(48,27,'toposcircuitry.com  |  andreuballus@toposcircuitry.com')
+              c.setFillColor(HexColor('#5BD4D9'));c.setFont('Helvetica-Bold',11)
+              c.drawRightString(915,27,f'{i:02d} / 08')
+              c.showPage()
+          c.save()
+          assert out.stat().st_size>5000
+          print('Verified 8-slide public PDF:',out,out.stat().st_size)
+          PY
+          pdfinfo ToposCircuitry_4YFN2027_Public_Pitch.pdf | grep -E '^Pages: +8$'
+          sha256sum ToposCircuitry_4YFN2027_Public_Pitch.pdf
+      - name: Publish PDF to this isolated branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'ToposCircuitry publication bot'
+          git config user.email 'andreuballus@toposcircuitry.com'
+          git add ToposCircuitry_4YFN2027_Public_Pitch.pdf
+          git commit -m '[generated] Publish public 4YFN27 ToposCircuitry pitch PDF'
+          git push origin HEAD:toposcircuitry-4yfn27-pitch-2026-10
